@@ -1,0 +1,5 @@
+.env
+memory_usage.log
+.metals
+rust_write/target
+.vscode

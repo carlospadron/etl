@@ -1,0 +1,9 @@
+[package]
+name = "rust_write"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+polars = "0.44.2"
+connector_arrow = "0.6.0"
+postgres = "0.19.9"
