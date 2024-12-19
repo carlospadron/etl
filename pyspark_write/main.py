@@ -1,7 +1,5 @@
-import pandas as pd
-from sqlalchemy import create_engine
+from pyspark.sql import SparkSession
 import os
-import pyspark.pandas as ps
 
 #credentials
 db_user_terra = os.getenv('data_uploads_user')
@@ -14,31 +12,53 @@ sf_db_address = os.getenv('sf_db_address')
 sf_pass = os.getenv('sf_pass')
 sf_db_name = os.getenv('sf_db_name')
 
-engine_terra = create_engine(
-    f'postgresql://{db_user_terra}:{db_password_terra}@{db_address_terra}/{db_name_terra}')
-
-engine_sf = f"jdbc:postgresql://{sf_db_address}/{sf_db_name}"
+url_terra = f"jdbc:postgresql://{db_address_terra}/{db_name_terra}"
+url_sf = f"jdbc:postgresql://{sf_db_address}/{sf_db_name}"
 
 table_sf = 'source.table'
-table_terra = 'asset_legacy'
-schema_terra = 'public_sf_legacy'
-query = f"SELECT * FROM {table_sf} limit 100"
+table_terra = 'source.table'
+query = f"SELECT * FROM {table_sf}"
 
-#read data from source
-print('Reading data from source')
-data = ps.read_sql_query(
-    query, 
-    engine_sf,
-    options={'user': sf_user, 'password': sf_pass})
-# data = pd.read_sql(query, engine_sf)
+spark = (SparkSession.builder
+    .appName("Scals/spark ETL")
+    .config("spark.master", "local[*]")
+    .config('spark.jars.packages', 'org.postgresql:postgresql:42.2.18')
+    .getOrCreate()
+    )
 
-# #copy data to destination
-# print('Copying data to destination')
-# data.to_sql(
-#     table_terra, 
-#     engine_terra, 
-#     schema=schema_terra, 
-#     if_exists='append', 
-#     index=False,
-#     method='multi'
-# )
+# Read data from PostgreSQL into a DataFrame
+print("Reading data from PostgreSQL into a DataFrame")
+df = (spark.read
+    .format("jdbc")
+    .option("url", url_sf)
+    .option("query", query)
+    .option("user", sf_user)
+    .option("password", sf_pass)
+    .option("fetchsize", "100000")
+    .option("driver", "org.postgresql.Driver")
+    .load()
+)
+
+# Write the DataFrame to another PostgreSQL table
+print("Writing the DataFrame to another PostgreSQL table")
+
+# insert mode that is very slow but database agnostic
+(df
+    .repartition(20)
+    .write
+    .mode("overwrite") # append/overwrite
+    .format("jdbc")
+    .option("url", url_terra)
+    .option("dbtable", table_terra)
+    .option("user", db_user_terra)
+    .option("password", db_password_terra)
+    .option("batchsize", "10000")
+    .option("truncate", "true")
+    .option("driver", "org.postgresql.Driver")
+    .save() 
+)
+
+# Stop the Spark session
+spark.stop()
+
+print("ETL job completed")

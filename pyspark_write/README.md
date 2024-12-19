@@ -1,15 +1,12 @@
-IN DEVELOPMENT
-there is a bug
-
 ```
-cd pandas_copy
-sudo docker build -t pandas_copy .
+cd pyspark_write
+sudo docker build -t pyspark_write .
 sudo docker images
 cd ..
-sudo docker rm -f pandas_copy || true
-sudo docker run --rm --env-file .env --name pandas_copy pandas_copy
+sudo docker rm -f pyspark_write || true
+sudo docker run --rm --env-file .env --name pyspark_write pyspark_write
 ```
 in other terminal
 ```
-./log_memory.sh pandas_copy 5
+./log_memory.sh pyspark_write 5
 ```

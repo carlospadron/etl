@@ -1,8 +1,18 @@
-# Use a lightweight Python base image
+# Stage 1: Build stage to install OpenJDK
+FROM openjdk:11-jre-slim AS jdk
+
+# Stage 2: Build stage to install Python and application dependencies
 FROM python:3.12-slim
 
 # Set environment variables for non-interactive installation
 ENV DEBIAN_FRONTEND=noninteractive
+
+# Copy OpenJDK from the first stage
+COPY --from=jdk /usr/local/openjdk-11 /usr/local/openjdk-11
+
+# Set JAVA_HOME environment variable
+ENV JAVA_HOME=/usr/local/openjdk-11
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # Install necessary system packages
 RUN apt-get update && \
