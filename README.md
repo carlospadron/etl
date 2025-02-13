@@ -8,7 +8,7 @@ OS Open UPRN
 https://osdatahub.os.uk/downloads/open/OpenUPRN
 
 full count: 41,011,955
-test count: 5,000,000
+test count: 2,000,000
 
 run upload:
 ```
