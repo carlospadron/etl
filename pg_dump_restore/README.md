@@ -4,7 +4,7 @@ sudo docker build -t pg_dump_restore .
 sudo docker images
 cd ..
 sudo docker rm -f pg_dump_restore || true
-sudo docker run --rm --env-file .env --name pg_dump_restore pg_dump_restore
+sudo docker run --rm --env-file .env --name pg_dump_restore --network host pg_dump_restore
 ```
 in other terminal
 ```
