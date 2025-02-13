@@ -2,29 +2,29 @@ import polars as pl
 import os
 
 #credentials
-db_user_terra = os.getenv('data_uploads_user')
-db_password_terra = os.getenv('data_uploads_pass_staging')
-db_name_terra = os.getenv('db_name')
-db_address_terra = os.getenv('db_address_stag')
+TARGET_USER = os.getenv('TARGET_USER')
+TARGET_PASS = os.getenv('TARGET_PASS')
+TARGET_DB = os.getenv('TARGET_DB')
+TARGET_ADDRESS = os.getenv('TARGET_ADDRESS')
 
-sf_user = os.getenv('sf_user')
-sf_db_address = os.getenv('sf_db_address')
-sf_pass = os.getenv('sf_pass')
-sf_db_name = os.getenv('sf_db_name')
+ORIGIN_USER = os.getenv('ORIGIN_USER')
+ORIGIN_ADDRESS = os.getenv('ORIGIN_ADDRESS')
+ORIGIN_PASS = os.getenv('ORIGIN_PASS')
+ORIGIN_DB = os.getenv('ORIGIN_DB')
 
-engine_terra = f'postgresql://{db_user_terra}:{db_password_terra}@{db_address_terra}/{db_name_terra}'
+engine_target = f'postgresql://{TARGET_USER}:{TARGET_PASS}@{TARGET_ADDRESS}/{TARGET_DB}'
 
-engine_sf = f'postgresql://{sf_user}:{sf_pass}@{sf_db_address}/{sf_db_name}'
+engine_origin = f'postgresql://{ORIGIN_USER}:{ORIGIN_PASS}@{ORIGIN_ADDRESS}/{ORIGIN_DB}'
 
-table_sf = 'source.table'
-table_terra = 'source.table'
-query = f"SELECT row_number() over () as fid, * FROM {table_sf}"
+table_origin = 'source.table'
+table_target = 'source.table'
+query = f"SELECT row_number() over () as fid, * FROM {table_origin}"
 
 #read data from source
 print('Reading data from source')
 data = pl.read_database_uri(
     query, 
-    engine_sf,
+    engine_origin,
     partition_on='fid',
     partition_num=10,
     protocol= 'binary',
@@ -33,7 +33,7 @@ data = pl.read_database_uri(
 
 #copy data to destination
 data.write_database(
-    table_name=table_terra,  
+    table_name=table_target,  
     if_table_exists = 'append',
-    connection=engine_terra
+    connection=engine_target
 )

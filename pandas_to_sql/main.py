@@ -3,38 +3,38 @@ from sqlalchemy import create_engine
 import os
 
 #credentials
-db_user_terra = os.getenv('data_uploads_user')
-db_password_terra = os.getenv('data_uploads_pass_staging')
-db_name_terra = os.getenv('db_name')
-db_address_terra = os.getenv('db_address_stag')
+TARGET_USER = os.getenv('TARGET_USER')
+TARGET_PASS = os.getenv('TARGET_PASS')
+TARGET_DB = os.getenv('TARGET_DB')
+TARGET_ADDRESS = os.getenv('TARGET_ADDRESS')
 
-sf_user = os.getenv('sf_user')
-sf_db_address = os.getenv('sf_db_address')
-sf_pass = os.getenv('sf_pass')
-sf_db_name = os.getenv('sf_db_name')
+ORIGIN_USER = os.getenv('ORIGIN_USER')
+ORIGIN_ADDRESS = os.getenv('ORIGIN_ADDRESS')
+ORIGIN_PASS = os.getenv('ORIGIN_PASS')
+ORIGIN_DB = os.getenv('ORIGIN_DB')
 
-engine_terra = create_engine(
-    f'postgresql://{db_user_terra}:{db_password_terra}@{db_address_terra}/{db_name_terra}')
+engine_target = create_engine(
+    f'postgresql://{TARGET_USER}:{TARGET_PASS}@{TARGET_ADDRESS}/{TARGET_DB}')
 
-engine_sf = create_engine(
-    f'postgresql://{sf_user}:{sf_pass}@{sf_db_address}/{sf_db_name}')
+engine_origin = create_engine(
+    f'postgresql://{ORIGIN_USER}:{ORIGIN_PASS}@{ORIGIN_ADDRESS}/{ORIGIN_DB}')
 
-table_sf = 'source.table'
-table_terra = 'asset_legacy'
-schema_terra = 'public_sf_legacy'
-query = f"SELECT * FROM {table_sf}"
+table_origin = 'source.table'
+table_target = 'asset_legacy'
+schema_target = 'public_origin_legacy'
+query = f"SELECT * FROM {table_origin}"
 
 #read data from source
 print('Reading data from source')
-data = pd.read_sql(query, engine_sf)
+data = pd.read_sql(query, engine_origin)
 
 #copy data to destination
 print('Copying data to destination')
 data.to_sql(
-    table_terra, 
-    engine_terra, 
-    schema=schema_terra, 
-    if_exists='append', 
+    table_target,
+    engine_target,
+    schema=schema_target,
+    if_exists='append',
     index=False,
     method='multi'
 )

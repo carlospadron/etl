@@ -2,22 +2,22 @@ from pyspark.sql import SparkSession
 import os
 
 #credentials
-db_user_terra = os.getenv('data_uploads_user')
-db_password_terra = os.getenv('data_uploads_pass_staging')
-db_name_terra = os.getenv('db_name')
-db_address_terra = os.getenv('db_address_stag')
+TARGET_USER = os.getenv('TARGET_USER')
+TARGET_PASS = os.getenv('TARGET_PASS')
+TARGET_DB = os.getenv('TARGET_DB')
+TARGET_ADDRESS = os.getenv('TARGET_ADDRESS')
 
-sf_user = os.getenv('sf_user')
-sf_db_address = os.getenv('sf_db_address')
-sf_pass = os.getenv('sf_pass')
-sf_db_name = os.getenv('sf_db_name')
+ORIGIN_USER = os.getenv('ORIGIN_USER')
+ORIGIN_ADDRESS = os.getenv('ORIGIN_ADDRESS')
+ORIGIN_PASS = os.getenv('ORIGIN_PASS')
+ORIGIN_DB = os.getenv('ORIGIN_DB')
 
-url_terra = f"jdbc:postgresql://{db_address_terra}/{db_name_terra}"
-url_sf = f"jdbc:postgresql://{sf_db_address}/{sf_db_name}"
+url_target = f"jdbc:postgresql://{TARGET_ADDRESS}/{TARGET_DB}"
+url_origin = f"jdbc:postgresql://{ORIGIN_ADDRESS}/{ORIGIN_DB}"
 
-table_sf = 'source.table'
-table_terra = 'source.table'
-query = f"SELECT * FROM {table_sf}"
+table_origin = 'source.table'
+table_target = 'source.table'
+query = f"SELECT * FROM {table_origin}"
 
 spark = (SparkSession.builder
     .appName("Scals/spark ETL")
@@ -30,10 +30,10 @@ spark = (SparkSession.builder
 print("Reading data from PostgreSQL into a DataFrame")
 df = (spark.read
     .format("jdbc")
-    .option("url", url_sf)
+    .option("url", url_origin)
     .option("query", query)
-    .option("user", sf_user)
-    .option("password", sf_pass)
+    .option("user", ORIGIN_USER)
+    .option("password", ORIGIN_PASS)
     .option("fetchsize", "100000")
     .option("driver", "org.postgresql.Driver")
     .load()
@@ -48,10 +48,10 @@ print("Writing the DataFrame to another PostgreSQL table")
     .write
     .mode("overwrite") # append/overwrite
     .format("jdbc")
-    .option("url", url_terra)
-    .option("dbtable", table_terra)
-    .option("user", db_user_terra)
-    .option("password", db_password_terra)
+    .option("url", url_target)
+    .option("dbtable", table_target)
+    .option("user", TARGET_USER)
+    .option("password", TARGET_PASS)
     .option("batchsize", "10000")
     .option("truncate", "true")
     .option("driver", "org.postgresql.Driver")

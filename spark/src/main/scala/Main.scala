@@ -6,33 +6,33 @@ import org.apache.spark.sql.{SparkSession, DataFrame}
       .config("spark.master", "local[*]")
       .getOrCreate()
 
-  val db_user_terra = sys.env("data_uploads_user")
-  val db_password_terra = sys.env("data_uploads_pass_staging")
-  val db_name_terra = sys.env("db_name")
-  val db_address_terra = sys.env("db_address_stag")
+  val TARGET_USER = sys.env("TARGET_USER")
+  val TARGET_PASS = sys.env("TARGET_PASS")
+  val TARGET_DB = sys.env("TARGET_DB")
+  val TARGET_ADDRESS = sys.env("TARGET_ADDRESS")
 
-  val sf_user = sys.env("sf_user")
-  val sf_db_address = sys.env("sf_db_address")
-  val sf_pass = sys.env("sf_pass")
-  val sf_db_name = sys.env("sf_db_name")
+  val ORIGIN_USER = sys.env("ORIGIN_USER")
+  val ORIGIN_ADDRESS = sys.env("ORIGIN_ADDRESS")
+  val ORIGIN_PASS = sys.env("ORIGIN_PASS")
+  val ORIGIN_DB = sys.env("ORIGIN_DB")
 
   // Database connection properties
-  val url_terra = s"jdbc:postgresql://$db_address_terra/$db_name_terra"
-  val url_sf = s"jdbc:postgresql://$sf_db_address/$sf_db_name"
+  val url_target = s"jdbc:postgresql://$TARGET_ADDRESS/$TARGET_DB"
+  val url_origin = s"jdbc:postgresql://$ORIGIN_ADDRESS/$ORIGIN_DB"
 
   // config
-  val table_sf = "public_sf_legacy.asset_legacy"
-  val table_terra = "public_sf_legacy.asset_legacy"
-  val query = s"SELECT * FROM $table_sf"
+  val table_origin = "public_origin_legacy.asset_legacy"
+  val table_target = "public_origin_legacy.asset_legacy"
+  val query = s"SELECT * FROM $table_origin"
 
   // Read data from PostgreSQL into a DataFrame
   println("Reading data from PostgreSQL into a DataFrame")
   val df: DataFrame = spark.read
     .format("jdbc")
-    .option("url", url_sf)
+    .option("url", url_origin)
     .option("query", query)
-    .option("user", sf_user)
-    .option("password", sf_pass)
+    .option("user", ORIGIN_USER)
+    .option("password", ORIGIN_PASS)
     .option("fetchsize", "100000")
     .load()
 
@@ -47,10 +47,10 @@ import org.apache.spark.sql.{SparkSession, DataFrame}
     .write
     .mode("overwrite") // append/overwrite
     .format("jdbc")
-    .option("url", url_terra)
-    .option("dbtable", table_terra)
-    .option("user", db_user_terra)
-    .option("password", db_password_terra)
+    .option("url", url_target)
+    .option("dbtable", table_target)
+    .option("user", TARGET_USER)
+    .option("password", TARGET_PASS)
     .option("batchsize", "10000")
     .option("truncate", "true")
     .save() 

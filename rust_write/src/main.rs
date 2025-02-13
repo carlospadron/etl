@@ -5,7 +5,7 @@ use polars::datatypes::AnyValue;
 fn connect_to_postgres(
     db_user: String, 
     db_password: String,
-    db_name: String,
+    TARGET_DB: String,
     db_address: String
 ) -> Client {
 
@@ -13,7 +13,7 @@ fn connect_to_postgres(
     Client::connect(
         &format!(
             "host={} user={} password={} dbname={}",
-            db_address, db_user, db_password, db_name
+            db_address, db_user, db_password, TARGET_DB
         ),
         NoTls,
     ).unwrap()
@@ -21,34 +21,34 @@ fn connect_to_postgres(
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Set the schema and table
-    let schema_sf = "public_sf_legacy";    
-    let table_sf = "asset_legacy";
-    let table_terra = "public_sf_legacy.asset_legacy";
+    let schema_origin = "public_origin_legacy";    
+    let table_origin = "asset_legacy";
+    let table_target = "public_origin_legacy.asset_legacy";
 
     // Get env vars
-    let db_user_terra = std::env::var("data_uploads_user")?;
-    let db_password_terra = std::env::var("data_uploads_pass_staging")?;
-    let db_name_terra = std::env::var("db_name")?;
-    let db_address_terra = std::env::var("db_db_address_stagaddress_terra")?;
+    let TARGET_USER = std::env::var("TARGET_USER")?;
+    let TARGET_PASS = std::env::var("TARGET_PASS")?;
+    let TARGET_DB = std::env::var("TARGET_DB")?;
+    let TARGET_ADDRESS = std::env::var("db_TARGET_ADDRESSaddress_target")?;
 
-    let sf_user = std::env::var("sf_user")?;
-    let sf_db_address = std::env::var("sf_db_address")?;
-    let sf_pass = std::env::var("sf_pass")?;
-    let sf_db_name = std::env::var("sf_db_name")?;    
+    let ORIGIN_USER = std::env::var("ORIGIN_USER")?;
+    let ORIGIN_ADDRESS = std::env::var("ORIGIN_ADDRESS")?;
+    let ORIGIN_PASS = std::env::var("ORIGIN_PASS")?;
+    let ORIGIN_DB = std::env::var("ORIGIN_DB")?;    
 
     // Connect to the PostgreSQL database
     let terra_client = connect_to_postgres(
-        db_user_terra,
-        db_password_terra,
-        db_name_terra,
-        db_address_terra
+        TARGET_USER,
+        TARGET_PASS,
+        TARGET_DB,
+        TARGET_ADDRESS
     );
 
     let mut sf_client = connect_to_postgres(
-        sf_user, 
-        sf_pass, 
-        sf_db_name, 
-        sf_db_address
+        ORIGIN_USER, 
+        ORIGIN_PASS, 
+        ORIGIN_DB, 
+        ORIGIN_ADDRESS
     );
 
     // // Query to get the schema information
@@ -56,8 +56,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     //     SELECT column_name, data_type
     //     FROM information_schema.columns
     //     WHERE table_schema = '{}' AND table_name = '{}'", 
-    //     schema_sf,
-    //     table_sf
+    //     schema_origin,
+    //     table_origin
     // );
     // let schema_rows = sf_client.query(&schema_query, &[])?;
 
@@ -72,7 +72,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     //     .collect();
 
     // Query to fetch data
-    let query = format!("SELECT * FROM {}.{} limit 100", schema_sf, table_sf);   
+    let query = format!("SELECT * FROM {}.{} limit 100", schema_origin, table_origin);   
     let rows = sf_client.query(&query, &[])?;
 
     // Iterate over rows and columns to get the data

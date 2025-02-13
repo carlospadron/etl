@@ -4,34 +4,34 @@ from io import StringIO
 import psycopg2
 
 #credentials
-db_user_terra = os.getenv('data_uploads_user')
-db_password_terra = os.getenv('data_uploads_pass_staging')
-db_name_terra = os.getenv('db_name')
-db_address_terra = os.getenv('db_address_stag')
+TARGET_USER = os.getenv('TARGET_USER')
+TARGET_PASS = os.getenv('TARGET_PASS')
+TARGET_DB = os.getenv('TARGET_DB')
+TARGET_ADDRESS = os.getenv('TARGET_ADDRESS')
 
-sf_user = os.getenv('sf_user')
-sf_db_address = os.getenv('sf_db_address')
-sf_pass = os.getenv('sf_pass')
-sf_db_name = os.getenv('sf_db_name')
+ORIGIN_USER = os.getenv('ORIGIN_USER')
+ORIGIN_ADDRESS = os.getenv('ORIGIN_ADDRESS')
+ORIGIN_PASS = os.getenv('ORIGIN_PASS')
+ORIGIN_DB = os.getenv('ORIGIN_DB')
 
-conn_terra = psycopg2.connect(
-    dbname=db_name_terra,
-    user=db_user_terra,
-    password=db_password_terra,
-    host=db_address_terra
+conn_target = psycopg2.connect(
+    dbname=TARGET_DB,
+    user=TARGET_USER,
+    password=TARGET_PASS,
+    host=TARGET_ADDRESS
 )
 
-engine_sf = f'postgresql://{sf_user}:{sf_pass}@{sf_db_address}/{sf_db_name}'
+engine_origin = f'postgresql://{ORIGIN_USER}:{ORIGIN_PASS}@{ORIGIN_ADDRESS}/{ORIGIN_DB}'
 
-table_sf = 'source.table'
-table_terra = 'source.table'
-query = f"SELECT row_number() over () as fid, * FROM {table_sf}"
+table_origin = 'source.table'
+table_target = 'source.table'
+query = f"SELECT row_number() over () as fid, * FROM {table_origin}"
 
 #read data from source
 print('Reading data from source')
 data = pl.read_database_uri(
     query, 
-    engine_sf,
+    engine_origin,
     partition_on='fid',
     partition_num=10,
     protocol= 'binary',
@@ -46,7 +46,7 @@ output.seek(0)
 
 #copy data to destination
 print('Copying data to destination')
-cursor = conn_terra.cursor()
-cursor.copy_expert(f"COPY {table_terra} FROM STDIN DELIMITER '|' CSV", output)
-conn_terra.commit()
+cursor = conn_target.cursor()
+cursor.copy_expert(f"COPY {table_target} FROM STDIN DELIMITER '|' CSV", output)
+conn_target.commit()
 cursor.close()
