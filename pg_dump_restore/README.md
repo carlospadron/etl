@@ -13,6 +13,6 @@ in other terminal
 
 Evaluate:
 ```
-psql -d target -c "TRUNCATE TABLE os_open_uprn"
 psql -d target -c "SELECT count(*) FROM os_open_uprn"
+psql -d target -c "TRUNCATE TABLE os_open_uprn"
 ```
