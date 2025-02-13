@@ -1,5 +1,6 @@
-CREATE TABLE IF NOT EXISTS os_open_uprn (
-    uprn INT NOT NULL,
+DROP TABLE IF EXISTS os_open_uprn;
+CREATE TABLE os_open_uprn (
+    uprn BIGINT NOT NULL,
     x_coordinate FLOAT8 NOT NULL,
     y_coordinate FLOAT8 NOT NULL,
     latitude FLOAT8 NOT NULL,
