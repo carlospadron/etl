@@ -2,3 +2,4 @@
 - add ballista
 - add datafusion
 - add duckdb
+- second round of testing with 50,000,000 for those memory efficient
