@@ -14,6 +14,7 @@ RUN apt-get update && \
 
 # Copy the bash script into the container
 COPY el_job.sh /usr/local/bin/el_job.sh
+COPY table_definitions.sql .
 
 # Make the script executable
 RUN chmod +x /usr/local/bin/el_job.sh
