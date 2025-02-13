@@ -1,0 +1,12 @@
+method,image size mb,peak memory mb,total time min,type,postgres only,Handles rotating credentials?,platform,notes,score
+pg_dump/pg_restore,145,20,3,EL,TRUE,TRUE,postgresql,This is purely EL job.  It needs a pgpass file that might be a hassle to manage. You can't specify the name of the target table in an easy way (Has to be the same than the original),
+polars_connectorx_copy,,,,ETL,TRUE,TRUE,python,,
+pandas read_sql_copy,,,,ETL,TRUE,TRUE,python,Should be one of the most efficient ones,
+pyspark_write,,,,ETL,FALSE,TRUE,python,,
+spark,,,,ETL,FALSE,TRUE,scala,Spark is very bloated. It is designed for very large datasets so this might not be a good example. It isn't the fastes but ti is database agnostic.,
+pandas read_sql_to_sql,,,,ETL,FALSE,TRUE,python,Inserts are notiourisly slow,
+polars read_sql write,,,,ETL,FALSE,TRUE,python,Inserts are notiourisly slow,
+polars adbc copy,,,,ETL,TRUE,TRUE,python,adbc is still in development so options and realibility are limited. This example fails due to a bug.,
+foreign data wrapper,,,,EL,TRUE,FALSE,postgresql,"Very simple to set. Do not apply joins on the raw data, it needs to be copied to a local table first. Rotating credentials might be tricky to set.",
+logical replication,,,,EL,TRUE,FALSE,postgresql,You need access to source to set a publication and access to target to set subscriber. Very reliable and you can do joins on the table. Rotating credentials might be tricky to set.,
+rust_write,,,,,,TRUE,rust,,
