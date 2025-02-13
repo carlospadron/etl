@@ -20,8 +20,8 @@ engine_target = create_engine(
 engine_origin = create_engine(
     f'postgresql://{ORIGIN_USER}:{ORIGIN_PASS}@{ORIGIN_ADDRESS}/{ORIGIN_DB}')
 
-table_origin = 'source.table'
-table_target = 'source.table'
+table_origin = 'public.os_open_uprn'
+table_target = 'os_open_uprn'
 query = f"SELECT * FROM {table_origin}"
 
 #read data from source
