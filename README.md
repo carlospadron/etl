@@ -7,7 +7,8 @@ Comparison of techs to perform ETL
 OS Open UPRN
 https://osdatahub.os.uk/downloads/open/OpenUPRN
 
-count: 41,011,955
+full count: 41,011,955
+test count: 5,000,000
 
 run upload:
 ```
@@ -31,14 +32,3 @@ sudo docker images
 ```
 # check memory
 chmod +x log_memory.sh
-
-# get secrets
-Do once a day: 
-```
-export VAULT_ADDR=VAULT_URL
-vault login
-```
-then run
-```
-source get_secrets.sh
-```
