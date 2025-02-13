@@ -1,7 +1,7 @@
 method,rows,image size mb,peak memory mb,total time min,type,postgres only,Handles rotating credentials?,platform,notes,score
 pg_dump/pg_restore," 2,000,000.00 ",145,20,0.07,EL,TRUE,TRUE,postgresql,This is purely EL job.  It needs a pgpass file that might be a hassle to manage. You can't specify the name of the target table in an easy way (Has to be the same than the original),
 polars_connectorx_copy," 2,000,000.00 ",,,,ETL,TRUE,TRUE,python,,
-pandas read_sql_copy," 2,000,000.00 ",,,,ETL,TRUE,TRUE,python,Should be one of the most efficient ones,
+pandas read_sql_copy," 2,000,000.00 ",693,400,1,ETL,TRUE,TRUE,python,Should be one of the most efficient ones,
 pyspark_write," 2,000,000.00 ",,,,ETL,FALSE,TRUE,python,,
 spark," 2,000,000.00 ",,,,ETL,FALSE,TRUE,scala,Spark is very bloated. It is designed for very large datasets so this might not be a good example. It isn't the fastes but ti is database agnostic.,
 pandas read_sql_to_sql," 2,000,000.00 ",693,7700,5,ETL,FALSE,TRUE,python,Inserts are notiourisly slow,
