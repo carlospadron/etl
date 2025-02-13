@@ -23,8 +23,8 @@ conn_target = psycopg2.connect(
 
 engine_origin = f'postgresql://{ORIGIN_USER}:{ORIGIN_PASS}@{ORIGIN_ADDRESS}/{ORIGIN_DB}'
 
-table_origin = 'source.table'
-table_target = 'source.table'
+table_origin = 'public.os_open_uprn'
+table_target = 'os_open_uprn'
 query = f"SELECT row_number() over () as fid, * FROM {table_origin}"
 
 #read data from source
