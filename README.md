@@ -1,6 +1,16 @@
-# poors_man_etl
+# ETL
 
-Simple etl built in python to replicate relatively small tables
+Comparison of techs to perform ETL
+
+# Data
+
+OS Open UPRN
+https://osdatahub.os.uk/downloads/open/OpenUPRN
+run upload:
+```
+cd data
+sh initial_upload.sh
+```
 
 ## check image sizes
 ```
