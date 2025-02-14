@@ -8,7 +8,7 @@ sudo docker run --rm --env-file .env --name polars_connectorx_copy --network hos
 ```
 in other terminal
 ```
-./log_memory.sh polars_connectorx_copy 5
+./log_memory.sh polars_connectorx_copy 1
 ```
 Evaluate:
 ```
