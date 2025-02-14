@@ -15,8 +15,8 @@ ORIGIN_DB = os.getenv('ORIGIN_DB')
 url_target = f"jdbc:postgresql://{TARGET_ADDRESS}/{TARGET_DB}"
 url_origin = f"jdbc:postgresql://{ORIGIN_ADDRESS}/{ORIGIN_DB}"
 
-table_origin = 'source.table'
-table_target = 'source.table'
+table_origin = 'public.os_open_uprn'
+table_target = 'os_open_uprn'
 query = f"SELECT * FROM {table_origin}"
 
 spark = (SparkSession.builder
