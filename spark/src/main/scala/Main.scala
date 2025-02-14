@@ -21,8 +21,8 @@ import org.apache.spark.sql.{SparkSession, DataFrame}
   val url_origin = s"jdbc:postgresql://$ORIGIN_ADDRESS/$ORIGIN_DB"
 
   // config
-  val table_origin = "public_origin_legacy.asset_legacy"
-  val table_target = "public_origin_legacy.asset_legacy"
+  val table_origin = "public.os_open_uprn"
+  val table_target = "os_open_uprn"
   val query = s"SELECT * FROM $table_origin"
 
   // Read data from PostgreSQL into a DataFrame

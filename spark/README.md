@@ -35,9 +35,14 @@ sudo docker build -t spark .
 sudo docker images
 cd ..
 sudo docker rm -f spark || true
-sudo docker run --rm --env-file .env --name spark spark
+sudo docker run --rm --env-file .env --name spark --network host spark
 ```
 in other terminal
 ```
-./log_memory.sh spark 5
+./log_memory.sh spark 1
+```
+Evaluate:
+```
+psql -d target -c "SELECT count(*) FROM os_open_uprn"
+psql -d target -c "TRUNCATE TABLE os_open_uprn"
 ```
