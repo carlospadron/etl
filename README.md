@@ -32,3 +32,22 @@ sudo docker images
 ```
 # check memory
 chmod +x log_memory.sh
+
+
+# Conclusions
+
+## DuckDB 
+- is a winner for both small and large datasets
+- it is not distributed so it might struggle with very large datasets
+- it is mostly sql based. Familiar for many but might have limitations.
+
+## Spark
+- handles well memory for both small and large datasets
+- not as fast as duckdb
+- it is distributed so it can handle very large datasets (Terabytes)
+- allows SQL, python and scala
+- It also has machine learning and graph theory capabilities
+
+## Polars
+- Very efficient compared to Pandas and for small datasets competes well against spark.
+- Very similar to pandas.
