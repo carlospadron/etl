@@ -1,14 +1,16 @@
 method,rows,image size mb,peak memory mb,total time min,type,Handles rotating credentials?,platform,finished,Score,notes
 pg_dump/pg_restore,"41,011,955.00",145,34,3,EL,TRUE,postgresql,TRUE,14790,This is purely EL job for postgresql.  It needs a pgpass file that might be a hassle to manage. You can't specify the name of the target table in an easy way (Has to be the same than the original)
-duckdb_copy,"41,011,955.00",566,3148,2,ETL,TRUE,c,TRUE,3563536,
+duckdb_copy,"41,011,955.00",566,3148,2,ETL,TRUE,c,TRUE,3563536,Only sql
+pyspark_copy,"41,011,955.00",1720,955,3,ETL,TRUE,python,TRUE,4927800,
 pyspark_write,"41,011,955.00",1610,1075,4.5,ETL,TRUE,python,TRUE,7788375,
 spark_write,"41,011,955.00",1330,2053,5,ETL,TRUE,scala,TRUE,13652450,
 polars_connectorx_copy,"41,011,955.00",943,11330,5,ETL,TRUE,python,TRUE,53420950,
 polars adbc copy,"41,011,955.00",841,11320,6,ETL,TRUE,python,TRUE,57120720,
 pg_dump/pg_restore,"2,000,000.00",145,20,0.05,EL,TRUE,postgresql,TRUE,145,This is purely EL job for postgresql.  It needs a pgpass file that might be a hassle to manage. You can't specify the name of the target table in an easy way (Has to be the same than the original)
-duckdb_copy,"2,000,000.00",566,345,0.016666667,ETL,TRUE,c,TRUE,3254.5,
+duckdb_copy,"2,000,000.00",566,345,0.016666667,ETL,TRUE,c,TRUE,3254.500065,Only sql
 polars adbc copy,"2,000,000.00",841,587,0.05,ETL,TRUE,python,TRUE,24683.35,
 polars_connectorx_copy,"2,000,000.00",943,600,0.05,ETL,TRUE,python,TRUE,28290,
+pyspark_copy,"2,000,000.00",1720,809,0.083333333,ETL,TRUE,python,TRUE,115956.6667,
 pandas read_sql_copy,"2,000,000.00",693,400,1,ETL,TRUE,python,TRUE,277200,
 pyspark_write,"2,000,000.00",1610,960,0.25,ETL,TRUE,python,TRUE,386400,
 spark_write,"2,000,000.00",1330,1775,0.5,ETL,TRUE,scala,TRUE,1180375,
