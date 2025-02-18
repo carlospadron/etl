@@ -1,3 +1,4 @@
 - add dlthub (IN PROCESS)
+- add ray
 - add trino
 - add airbyte (proving a bit complex as airbyte is meant to be run as an independet server and pyairbyte is not a replacement)
