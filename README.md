@@ -37,7 +37,7 @@ chmod +x log_memory.sh
 # Conclusions
 
 ## DuckDB 
-- is a winner for both small and large datasets
+- is a winner (in terms of execution time) for both small and large datasets
 - it is not distributed so it might struggle with very large datasets
 - it is mostly sql based. Familiar for many but might have limitations.
 
