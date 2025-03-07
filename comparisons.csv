@@ -1,5 +1,6 @@
 method,rows,image size mb,peak memory mb,total time min,type,Handles rotating credentials?,platform,finished,Score,notes
 pg_dump/pg_restore,"41,011,955.00",145,34,3,EL,TRUE,postgresql,TRUE,102,This is purely EL job for postgresql.  It needs a pgpass file that might be a hassle to manage. You can't specify the name of the target table in an easy way (Has to be the same than the original)
+sling,"41,011,955.00",145,55,6,EL,TRUE,go,TRUE,330,
 pyspark_copy,"41,011,955.00",1720,955,3,ETL,TRUE,python,TRUE,2865,
 pyspark_write,"41,011,955.00",1610,1075,4.5,ETL,TRUE,python,TRUE,4837.5,
 duckdb_copy_parquet,"41,011,955.00",566,3985,1.5,ETL,TRUE,c,TRUE,5977.5,Only sql
