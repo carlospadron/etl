@@ -36,6 +36,11 @@ chmod +x log_memory.sh
 
 # Conclusions
 
+## Sling
+- Great for replications as it includes many inbuild features (retries, streaming etc)
+- it has a very low memory impact
+- it is not as fast as other solutions
+
 ## DuckDB 
 - is a winner (in terms of execution time) for both small and large datasets
 - it is not distributed so it might struggle with very large datasets
