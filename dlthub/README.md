@@ -1,3 +1,9 @@
+# Project init
+```
+dlt init sql_database postgres
+```
+
+# run
 ```
 cd pyspark_write
 sudo docker build -t pyspark_write .
