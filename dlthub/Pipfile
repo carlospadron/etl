@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-dlt = "*"
+dlt = {extras = ["sql_database"], version = "*"}
 
 [dev-packages]
 

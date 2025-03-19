@@ -6,4 +6,4 @@ log_level="WARNING"  # the system log level of dlt
 dlthub_telemetry = true
 
 [sources.sql_database]
-table = "table" # please set me up!
+table = "os_open_uprn"
