@@ -18,8 +18,7 @@ def load_tables():
 
     credentials_origin = f'postgresql://{ORIGIN_USER}:{ORIGIN_PASS}@{ORIGIN_ADDRESS}/{ORIGIN_DB}'
 
-    # Create a dlt source that will load tables "family" and "genome"
-    source = sql_database(credentials_origin).with_resources("os_open_uprn")
+    source = sql_database(credentials_origin, table_names=["os_open_uprn"], schema="public")
 
     # Create a dlt pipeline object
     pipeline = dlt.pipeline(
