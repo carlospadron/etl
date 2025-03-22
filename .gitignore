@@ -5,3 +5,4 @@ rust_write/target
 .vscode
 data/*.csv
 pyspark_copy/data
+elusion/target
