@@ -1,6 +1,6 @@
 # ETL
 
-Comparison of techs to perform ETL
+Comparison of techs to perform ETL. The idea is simple, read a dataset from postgres, replicate it on another postres database. The detailed statistics can be found in [results.ipynb](results.ipynb).
 
 # Data
 
@@ -10,31 +10,7 @@ https://osdatahub.os.uk/downloads/open/OpenUPRN
 full count: 41,011,955
 test count: 2,000,000
 
-run upload:
-```
-cd data
-sh initial_upload.sh
-```
-
-# Databases
-
-origin: postgres
-target: target
-
-create target:
-```
-createdb target
-```
-
-## check image sizes
-```
-sudo docker images
-```
-# check memory
-chmod +x log_memory.sh
-
-
-# Conclusions
+# Results
 
 ## Sling
 - Great for replications as it includes many inbuild features (retries, streaming etc)
@@ -48,7 +24,7 @@ chmod +x log_memory.sh
 
 ## Spark
 - handles well memory for both small and large datasets
-- not as fast as duckdb
+- not as fast as duckdb for these tests
 - it is distributed so it can handle very large datasets (Terabytes)
 - allows SQL, python and scala
 - It also has machine learning and graph theory capabilities
@@ -56,3 +32,22 @@ chmod +x log_memory.sh
 ## Polars
 - Very efficient compared to Pandas and for small datasets competes well against spark.
 - Very similar to pandas.
+
+
+# Setup
+
+## Initial data upload
+run upload:
+```
+cd data
+sh initial_upload.sh
+```
+## Create databases
+
+origin: postgres
+target: target
+
+create target:
+```
+createdb target
+```
