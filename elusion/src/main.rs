@@ -36,3 +36,5 @@ async fn main() -> ElusionResult<()> {
 
     Ok(())
 }
+
+// cargo run --features odbc
