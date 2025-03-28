@@ -1,6 +1,6 @@
 # ETL
 
-Comparison of techs to perform ETL. The idea is simple, read a dataset from postgres, replicate it on another postres database. The detailed statistics can be found in [results.ipynb](results.ipynb).
+Comparison of techs to perform ETL. The idea is simple, read a dataset from postgres, replicate it on another postres database and evaluate time and memory consupmtion. The detailed statistics can be found in [results.ipynb](results.ipynb).
 
 # Data
 
@@ -10,7 +10,11 @@ https://osdatahub.os.uk/downloads/open/OpenUPRN
 full count: 41,011,955
 test count: 2,000,000
 
-# Results
+# Highligts
+
+## pg_dump/pg_restore
+- For postgresql to postgresql is the most efficient tool.
+- It is not possible to transform the data.
 
 ## Sling
 - Great for replications as it includes many inbuild features (retries, streaming etc)
@@ -25,7 +29,7 @@ test count: 2,000,000
 ## Spark
 - handles well memory for both small and large datasets
 - not as fast as duckdb for these tests
-- it is distributed so it can handle very large datasets (Terabytes)
+- it is distributed so it can handle very large datasets (Terabytes and more)
 - allows SQL, python and scala
 - It also has machine learning and graph theory capabilities
 
