@@ -6,3 +6,4 @@ rust_write/target
 data/*.csv
 pyspark_copy/data
 elusion/target
+terraform/terraform.tfvars
