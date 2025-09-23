@@ -10,6 +10,13 @@ terraform {
 
 provider "aws" {
   region = var.aws_region
+  # Use profile if provided, otherwise rely on environment/default chain
+  dynamic "profile" {
+    for_each = var.aws_profile != "" ? [var.aws_profile] : []
+    content {
+      profile = profile.value
+    }
+  }
 }
 
 data "http" "my_ip" {
@@ -106,6 +113,9 @@ EOT
     interpreter = ["/bin/bash", "-c"]
     environment = {
       PGPASSWORD = var.master_password
+      # forward AWS profile for aws CLI calls executed by local-exec when set
+      AWS_PROFILE = var.aws_profile
+      AWS_SDK_LOAD_CONFIG = "1"
     }
   }
 }

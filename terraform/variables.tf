@@ -4,6 +4,12 @@ variable "aws_region" {
   default     = "eu-west-2"
 }
 
+variable "aws_profile" {
+  description = "AWS CLI/profile name to use for provider and local-exec commands (optional). If empty, relies on default credential chain or AWS_PROFILE env var."
+  type        = string
+  default     = ""
+}
+
 variable "vpc_id" {
   description = "VPC id where Aurora will be deployed"
   type        = string
