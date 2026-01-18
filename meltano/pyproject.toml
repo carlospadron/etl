@@ -1,9 +1,0 @@
-[project]
-name = "meltano-etl"
-version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.12"
-dependencies = [
-    "meltano>=4.0.8",
-]
