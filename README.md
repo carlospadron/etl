@@ -40,18 +40,121 @@ test count: 2,000,000
 
 # Setup
 
-## Initial data upload
-run upload:
+This project provides multiple ways to set up the databases:
+
+## Option 1: Local Development with Docker Compose (Recommended)
+
+The easiest way to get started is using Docker Compose for local development:
+
+### Quick Start
+
+```bash
+# Complete setup: start databases and seed data (if CSV is available)
+make setup-local
+
+# Or use the script directly
+./setup-local.sh
 ```
+
+This will:
+- Start two PostgreSQL databases (source on port 5432, target on port 5433)
+- Create the required table schemas
+- Seed data from CSV if available in `data/osopenuprn_202502.csv`
+
+### Manual Control
+
+```bash
+# Start databases only
+make start-local
+
+# Stop databases
+make stop-local
+
+# Remove databases and volumes
+make clean-local
+
+# View logs
+make logs-local
+```
+
+### Connection Details
+
+After setup, databases are accessible at:
+
+**Source Database:**
+- Host: localhost
+- Port: 5432
+- Database: postgres
+- User: postgres
+- Password: postgres
+- Connection string: `postgresql://postgres:postgres@localhost:5432/postgres`
+
+**Target Database:**
+- Host: localhost
+- Port: 5433
+- Database: target
+- User: postgres
+- Password: postgres
+- Connection string: `postgresql://postgres:postgres@localhost:5433/target`
+
+## Option 2: AWS Deployment with Terraform
+
+For production or cloud-based testing, use Terraform to deploy Aurora PostgreSQL Serverless:
+
+```bash
+# Initialize Terraform
+cd terraform
+terraform init
+
+# Configure variables (copy and edit the example file)
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your AWS VPC and subnet IDs
+
+# Deploy infrastructure
+terraform apply
+
+# Seed data (optional)
+DB_ENDPOINT=$(terraform output -raw cluster_endpoint)
+DB_USER=$(terraform output -raw master_username)
+DB_PASSWORD=$(terraform output -raw master_password)
+SOURCE_DB="source" CSV_FILE="/path/to/data.csv" ./seed-database.sh
+```
+
+See [terraform/README.md](terraform/README.md) for detailed instructions.
+
+## Option 3: Manual Local Setup
+
+If you prefer to use your own PostgreSQL installation:
+
+```bash
+# Create databases
+createdb postgres  # Source database
+createdb target    # Target database
+
+# Create tables
+psql -d postgres -f data/table_definitions.sql
+psql -d target -f data/table_definitions.sql
+
+# Seed data (if you have the CSV file)
 cd data
-sh initial_upload.sh
+./initial_upload.sh
 ```
-## Create databases
 
-origin: postgres
-target: target
+## Data
 
-create target:
-```
-createdb target
+Download the OS Open UPRN dataset:
+- URL: https://osdatahub.os.uk/downloads/open/OpenUPRN
+- Place the CSV file at: `data/osopenuprn_202502.csv`
+- Full dataset: 41,011,955 rows
+- Test dataset: 2,000,000 rows (can be configured in seeding scripts)
+
+## Prerequisites
+
+- **For Docker Setup**: Docker and Docker Compose
+- **For Terraform**: Terraform >= 1.0, AWS CLI, PostgreSQL client
+- **For Manual Setup**: PostgreSQL >= 12
+
+Check dependencies:
+```bash
+make check-deps
 ```

@@ -1,0 +1,42 @@
+# Example Terraform variables file for ETL project
+# Copy this file to terraform.tfvars and fill in your values
+# Note: terraform.tfvars is git-ignored for security
+
+# AWS Configuration
+aws_region  = "eu-west-2"  # Change to your preferred region
+aws_profile = ""           # Optional: AWS CLI profile name, leave empty to use default credentials
+
+# Network Configuration
+# You must provide your VPC ID and at least 2 subnet IDs in different AZs
+vpc_id     = "vpc-xxxxxxxxxxxxxxxxx"  # Replace with your VPC ID
+subnet_ids = [
+  "subnet-xxxxxxxxxxxxxxxxx",         # Replace with your subnet ID in AZ 1
+  "subnet-xxxxxxxxxxxxxxxxx"          # Replace with your subnet ID in AZ 2
+]
+
+# Security Configuration
+# By default, only your current IP will be allowed
+# To specify custom CIDR blocks, uncomment and modify:
+# allowed_cidr_blocks = ["10.0.0.0/8", "192.168.1.0/24"]
+
+# Database Configuration
+cluster_identifier      = "etl-aurora-cluster"
+db_subnet_group_name    = "etl-aurora-subnet-group"
+engine_version          = "17.4"
+primary_database_name   = "source"
+target_database_name    = "target"
+
+# Database Credentials
+# IMPORTANT: Use strong passwords in production!
+# Consider using AWS Secrets Manager or environment variables instead
+master_username = "masteruser"
+master_password = "ChangeMe123!"  # CHANGE THIS!
+
+# Aurora Serverless Configuration
+serverless_auto_pause               = true
+serverless_min_capacity             = 2
+serverless_max_capacity             = 8
+serverless_seconds_until_auto_pause = 300
+
+# Public Access (use with caution in production)
+allow_public_access = true  # Set to false for production environments
