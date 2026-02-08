@@ -19,35 +19,35 @@ setup-local: ## Complete setup: start databases and seed data
 
 start-local: ## Start local PostgreSQL databases with Docker Compose
 	@echo "${GREEN}Starting local databases...${NC}"
-	@if command -v docker-compose > /dev/null 2>&1; then \
-		docker-compose up -d; \
-	else \
+	@if docker compose version > /dev/null 2>&1; then \
 		docker compose up -d; \
+	else \
+		docker-compose up -d; \
 	fi
 	@echo "${GREEN}Databases started. Source on port 5432, Target on port 5433${NC}"
 
 stop-local: ## Stop local databases
 	@echo "${YELLOW}Stopping local databases...${NC}"
-	@if command -v docker-compose > /dev/null 2>&1; then \
-		docker-compose stop; \
-	else \
+	@if docker compose version > /dev/null 2>&1; then \
 		docker compose stop; \
+	else \
+		docker-compose stop; \
 	fi
 
 clean-local: ## Stop and remove local databases and volumes
 	@echo "${YELLOW}Cleaning up local databases...${NC}"
-	@if command -v docker-compose > /dev/null 2>&1; then \
-		docker-compose down -v; \
-	else \
+	@if docker compose version > /dev/null 2>&1; then \
 		docker compose down -v; \
+	else \
+		docker-compose down -v; \
 	fi
 	@echo "${GREEN}Cleanup complete${NC}"
 
 logs-local: ## Show logs from local databases
-	@if command -v docker-compose > /dev/null 2>&1; then \
-		docker-compose logs -f; \
-	else \
+	@if docker compose version > /dev/null 2>&1; then \
 		docker compose logs -f; \
+	else \
+		docker-compose logs -f; \
 	fi
 
 seed-data: ## Seed data into local source database (requires CSV file in data/)
