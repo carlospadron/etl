@@ -6,4 +6,12 @@ rust_write/target
 data/*.csv
 pyspark_copy/data
 elusion/target
+
+# Terraform
 terraform/terraform.tfvars
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/terraform.tfstate.d/
+

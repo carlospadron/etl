@@ -11,6 +11,9 @@ ORIGIN_USER = os.getenv('ORIGIN_USER')
 ORIGIN_ADDRESS = os.getenv('ORIGIN_ADDRESS')
 ORIGIN_PASS = os.getenv('ORIGIN_PASS')
 ORIGIN_DB = os.getenv('ORIGIN_DB')
+ORIGIN_PORT = os.getenv('ORIGIN_PORT', '5432')
+
+TARGET_PORT = os.getenv('TARGET_PORT', '5432')
 
 # Install and load the PostgreSQL extension
 duckdb.sql("INSTALL postgres;")
@@ -28,7 +31,7 @@ duckdb.sql(
     CREATE TABLE {table_origin} AS
     FROM postgres_scan(
         'host={ORIGIN_ADDRESS}
-        port=5432
+        port={ORIGIN_PORT}
         dbname={ORIGIN_DB}
         user={ORIGIN_USER}
         password={ORIGIN_PASS}',
@@ -50,7 +53,7 @@ duckdb.sql(
     f"""
     ATTACH 
         'host={TARGET_ADDRESS}
-        port=5432
+        port={TARGET_PORT}
         dbname={TARGET_DB}
         user={TARGET_USER}
         password={TARGET_PASS}' AS target (TYPE POSTGRES);
