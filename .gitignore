@@ -1,5 +1,6 @@
 .env
 memory_usage.log
+benchmark_report.txt
 .metals
 rust_write/target
 .vscode

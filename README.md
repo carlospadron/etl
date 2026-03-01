@@ -49,7 +49,7 @@ The easiest way to get started is using Docker Compose for local development:
 ### Quick Start
 
 ```bash
-# Complete setup: start databases and seed data (if CSV is available)
+# Complete setup: start databases, seed data, and generate .env
 make setup-local
 
 # Or use the script directly
@@ -60,42 +60,7 @@ This will:
 - Start two PostgreSQL databases (source on port 5434, target on port 5433)
 - Create the required table schemas
 - Seed data from CSV if available in `data/osopenuprn_*.csv`
-
-### Manual Control
-
-```bash
-# Start databases only
-make start-local
-
-# Stop databases
-make stop-local
-
-# Remove databases and volumes
-make clean-local
-
-# View logs
-make logs-local
-```
-
-### Connection Details
-
-After setup, databases are accessible at:
-
-**Source Database:**
-- Host: localhost
-- Port: 5434
-- Database: postgres
-- User: postgres
-- Password: postgres
-- Connection string: `postgresql://postgres:postgres@localhost:5434/postgres`
-
-**Target Database:**
-- Host: localhost
-- Port: 5433
-- Database: target
-- User: postgres
-- Password: postgres
-- Connection string: `postgresql://postgres:postgres@localhost:5433/target`
+- Generate a centralised `.env` file with all connection variables
 
 ## Option 2: AWS Deployment with Terraform
 
@@ -112,41 +77,13 @@ cp terraform.tfvars.example terraform.tfvars
 
 # Deploy infrastructure
 terraform apply
-
-# Seed data (optional)
-DB_ENDPOINT=$(terraform output -raw cluster_endpoint)
-DB_USER=$(terraform output -raw master_username)
-DB_PASSWORD=$(terraform output -raw master_password)
-SOURCE_DB="source" CSV_FILE="/path/to/data.csv" ./seed-database.sh
 ```
 
-See [terraform/README.md](terraform/README.md) for detailed instructions.
+See [SETUP.md](SETUP.md) for detailed instructions.
 
 ## Option 3: Manual Local Setup
 
-If you prefer to use your own PostgreSQL installation:
-
-```bash
-# Create databases
-createdb postgres  # Source database
-createdb target    # Target database
-
-# Create tables
-psql -d postgres -f data/table_definitions.sql
-psql -d target -f data/table_definitions.sql
-
-# Seed data (if you have the CSV file)
-cd data
-./initial_upload.sh
-```
-
-## Data
-
-Download the OS Open UPRN dataset:
-- URL: https://osdatahub.os.uk/downloads/open/OpenUPRN
-- Place the CSV file at: `data/osopenuprn_<date>.csv` (any date suffix)
-- Full dataset: 41,011,955 rows
-- Test dataset: 2,000,000 rows (can be configured in seeding scripts)
+If you prefer to use your own PostgreSQL installation, copy `.env.example` to `.env` and adjust the values, then create the databases and seed data manually.
 
 ## Prerequisites
 
@@ -158,3 +95,50 @@ Check dependencies:
 ```bash
 make check-deps
 ```
+
+# Running Benchmarks
+
+All benchmarks are managed centrally. Each subfolder contains an ETL implementation with its own Dockerfile. The centralised runner builds images, runs containers, monitors memory, validates source/target row counts, and generates a text report.
+
+## Run All Benchmarks
+
+```bash
+make test-all
+```
+
+## Run a Specific Benchmark
+
+```bash
+make test-etl ETL=duckdb_copy
+```
+
+## Build All Docker Images (without running)
+
+```bash
+make build-all
+```
+
+## Available ETL Methods
+
+| Method | Description |
+|--------|-------------|
+| `duckdb_copy` | DuckDB with CSV intermediate |
+| `duckdb_copy_parquet` | DuckDB with Parquet intermediate |
+| `pandas_copy` | Pandas read_sql + COPY bulk load |
+| `pandas_to_sql` | Pandas read_sql + to_sql() |
+| `pg_dump_restore` | Native pg_dump/pg_restore |
+| `polars_adbc_copy` | Polars ADBC + COPY bulk load |
+| `polars_connectorx_copy` | Polars ConnectorX + COPY bulk load |
+| `polars_connectorx_write` | Polars ConnectorX + write_database |
+| `pyspark_copy` | PySpark JDBC read + CSV + COPY |
+| `pyspark_write` | PySpark JDBC read + JDBC write |
+| `sling` | Sling full-refresh replication |
+| `spark` | Scala Spark JDBC read + JDBC write |
+
+## Benchmark Report
+
+After running benchmarks, a `benchmark_report.txt` file is generated with:
+- Duration for each test
+- Peak memory usage
+- Source and target row counts
+- Pass/fail validation (source count must equal target count)

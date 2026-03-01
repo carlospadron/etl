@@ -1,4 +1,4 @@
-.PHONY: help setup-local start-local stop-local clean-local seed-data terraform-init terraform-plan terraform-apply terraform-destroy
+.PHONY: help setup-local start-local stop-local clean-local seed-data test-all test-etl build-all terraform-init terraform-plan terraform-apply terraform-destroy
 
 # Colors for output
 GREEN  := \033[0;32m
@@ -87,19 +87,34 @@ terraform-output: ## Show Terraform outputs
 
 ##@ Testing
 
-test-pg-dump: ## Test pg_dump/restore ETL method
-	@echo "${GREEN}Testing pg_dump/restore...${NC}"
-	@docker build -t etl-pg-dump ./pg_dump_restore
-	@docker run --rm --network host \
-		-e ORIGIN_ADDRESS=localhost \
-		-e ORIGIN_DB=postgres \
-		-e ORIGIN_USER=postgres \
-		-e ORIGIN_PASS=postgres \
-		-e TARGET_ADDRESS=localhost \
-		-e TARGET_DB=target \
-		-e TARGET_USER=postgres \
-		-e TARGET_PASS=postgres \
-		etl-pg-dump
+test-all: ## Run all ETL benchmarks (builds, runs, monitors, validates, reports)
+	@echo "${GREEN}Running all ETL benchmarks...${NC}"
+	@bash run_tests.sh
+
+test-etl: ## Run a specific ETL benchmark. Usage: make test-etl ETL=duckdb_copy
+	@if [ -z "$(ETL)" ]; then \
+		echo "${YELLOW}Usage: make test-etl ETL=<method_name>${NC}"; \
+		echo "Available methods:"; \
+		echo "  duckdb_copy duckdb_copy_parquet pandas_copy pandas_to_sql"; \
+		echo "  pg_dump_restore polars_adbc_copy polars_connectorx_copy"; \
+		echo "  polars_connectorx_write pyspark_copy pyspark_write sling spark"; \
+		exit 1; \
+	fi
+	@echo "${GREEN}Running ETL benchmark: $(ETL)...${NC}"
+	@bash run_tests.sh $(ETL)
+
+build-all: ## Build all ETL Docker images
+	@echo "${GREEN}Building all ETL Docker images...${NC}"
+	@for dir in duckdb_copy duckdb_copy_parquet pandas_copy pandas_to_sql \
+		pg_dump_restore polars_adbc_copy polars_connectorx_copy \
+		polars_connectorx_write pyspark_copy pyspark_write sling spark; do \
+		if [ -f "$$dir/Dockerfile" ]; then \
+			echo "${GREEN}Building etl-$$dir...${NC}"; \
+			docker build -t "etl-$$dir" "./$$dir" > /dev/null 2>&1 || \
+				echo "${YELLOW}Warning: failed to build $$dir${NC}"; \
+		fi; \
+	done
+	@echo "${GREEN}All images built${NC}"
 
 ##@ Utility
 
