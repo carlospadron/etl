@@ -17,6 +17,17 @@ ENV_FILE="${SCRIPT_DIR}/.env"
 REPORT_FILE="${SCRIPT_DIR}/benchmark_report.txt"
 MEMORY_INTERVAL=2
 
+# Track background PIDs for cleanup
+MONITOR_PIDS=()
+
+cleanup() {
+    for pid in "${MONITOR_PIDS[@]}"; do
+        kill "${pid}" 2>/dev/null || true
+    done
+    MONITOR_PIDS=()
+}
+trap cleanup EXIT INT TERM
+
 # All ETL methods with Dockerfiles
 ALL_METHODS=(
     duckdb_copy
@@ -124,6 +135,7 @@ build_image() {
 
 run_single_test() {
     local method="$1"
+    local result_file="$2"
     local table="os_open_uprn"
     local container_name="etl-${method}"
     local mem_log="/tmp/etl_mem_${method}.csv"
@@ -132,7 +144,7 @@ run_single_test() {
 
     # Build image
     if ! build_image "${method}"; then
-        echo "${method}|BUILD_FAILED|0|N/A|N/A|N/A|FAIL"
+        echo "${method}|BUILD_FAILED|0|N/A|N/A|N/A|FAIL" >> "${result_file}"
         return
     fi
 
@@ -159,6 +171,7 @@ run_single_test() {
     # Start memory monitor in background
     monitor_memory "${container_name}" "${mem_log}" &
     local monitor_pid=$!
+    MONITOR_PIDS+=("${monitor_pid}")
 
     # Wait for container to finish
     local exit_code
@@ -171,6 +184,7 @@ run_single_test() {
     # Stop memory monitor
     kill "${monitor_pid}" 2>/dev/null || true
     wait "${monitor_pid}" 2>/dev/null || true
+    MONITOR_PIDS=("${MONITOR_PIDS[@]/${monitor_pid}/}")
 
     # Get peak memory
     local peak_mem
@@ -201,8 +215,8 @@ run_single_test() {
         print_error "${method}: ${status} (${duration}s)"
     fi
 
-    # Return result as pipe-separated line
-    echo "${method}|${exit_code}|${duration}|${peak_mem}|${source_count}|${target_count}|${status}"
+    # Write result to file (avoids stdout corruption)
+    echo "${method}|${exit_code}|${duration}|${peak_mem}|${source_count}|${target_count}|${status}" >> "${result_file}"
 }
 
 generate_report() {
@@ -304,8 +318,7 @@ main() {
     > "${results_tmp}"
 
     for method in "${methods[@]}"; do
-        result=$(run_single_test "${method}")
-        echo "${result}" >> "${results_tmp}"
+        run_single_test "${method}" "${results_tmp}"
         echo ""
     done
 
