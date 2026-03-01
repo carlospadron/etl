@@ -57,9 +57,9 @@ make setup-local
 ```
 
 This will:
-- Start two PostgreSQL databases (source on port 5432, target on port 5433)
+- Start two PostgreSQL databases (source on port 5434, target on port 5433)
 - Create the required table schemas
-- Seed data from CSV if available in `data/osopenuprn_202502.csv`
+- Seed data from CSV if available in `data/osopenuprn_*.csv`
 
 ### Manual Control
 
@@ -83,11 +83,11 @@ After setup, databases are accessible at:
 
 **Source Database:**
 - Host: localhost
-- Port: 5432
+- Port: 5434
 - Database: postgres
 - User: postgres
 - Password: postgres
-- Connection string: `postgresql://postgres:postgres@localhost:5432/postgres`
+- Connection string: `postgresql://postgres:postgres@localhost:5434/postgres`
 
 **Target Database:**
 - Host: localhost
@@ -144,7 +144,7 @@ cd data
 
 Download the OS Open UPRN dataset:
 - URL: https://osdatahub.os.uk/downloads/open/OpenUPRN
-- Place the CSV file at: `data/osopenuprn_202502.csv`
+- Place the CSV file at: `data/osopenuprn_<date>.csv` (any date suffix)
 - Full dataset: 41,011,955 rows
 - Test dataset: 2,000,000 rows (can be configured in seeding scripts)
 

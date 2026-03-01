@@ -11,11 +11,11 @@ NC='\033[0m' # No Color
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DATA_DIR="${SCRIPT_DIR}/data"
-CSV_FILE="${DATA_DIR}/osopenuprn_202502.csv"
+CSV_FILE=$(ls "${DATA_DIR}"/osopenuprn_*.csv 2>/dev/null | head -1)
 
 # Database connection details for docker-compose setup
 SOURCE_HOST="localhost"
-SOURCE_PORT="5432"
+SOURCE_PORT="5434"
 SOURCE_DB="postgres"
 SOURCE_USER="postgres"
 SOURCE_PASS="postgres"
@@ -108,11 +108,11 @@ start_databases() {
 seed_data() {
     print_info "Checking for CSV data file..."
     
-    if [ ! -f "${CSV_FILE}" ]; then
-        print_warning "CSV file not found at ${CSV_FILE}"
+    if [ -z "${CSV_FILE}" ] || [ ! -f "${CSV_FILE}" ]; then
+        print_warning "No CSV file found matching ${DATA_DIR}/osopenuprn_*.csv"
         print_info "You can download the OS Open UPRN dataset from:"
         print_info "https://osdatahub.os.uk/downloads/open/OpenUPRN"
-        print_info "Place the CSV file at: ${CSV_FILE}"
+        print_info "Place the CSV file at: ${DATA_DIR}/osopenuprn_<date>.csv"
         print_warning "Skipping data seeding. You can run this script again after downloading the data."
         return 0
     fi

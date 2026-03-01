@@ -1,3 +1,8 @@
+- change data to geospatial data and make it bigger
+- add to comparison: can create tables and indexes, uses checkpoints, it is custom made
 - add meltano
+- add debezium
+- add sqlalchemy custom
+- add pyspark stream
 - add dlthub (proving tricky as it is a complex tool)
 - add airbyte (proving a bit complex as airbyte is meant to be run as an independet server and pyairbyte is not a replacement)

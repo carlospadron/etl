@@ -1,10 +1,10 @@
 ```
 cd pg_dump_restore
-sudo docker build -t pg_dump_restore .
-sudo docker images
+docker build -t pg_dump_restore .
+docker images
 cd ..
-sudo docker rm -f pg_dump_restore || true
-sudo docker run --rm --env-file .env --name pg_dump_restore --network host pg_dump_restore
+docker rm -f pg_dump_restore || true
+docker run --rm --env-file .env --name pg_dump_restore --network host pg_dump_restore
 ```
 in other terminal
 ```
@@ -13,6 +13,6 @@ in other terminal
 
 Evaluate:
 ```
-psql -d target -c "SELECT count(*) FROM os_open_uprn"
-psql -d target -c "TRUNCATE TABLE os_open_uprn"
+psql -h localhost -p 5433 -U postgres -d target -c "SELECT count(*) FROM os_open_uprn"
+psql -h localhost -p 5433 -U postgres -d target -c "TRUNCATE TABLE os_open_uprn"
 ```

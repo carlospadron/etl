@@ -52,8 +52,9 @@ logs-local: ## Show logs from local databases
 
 seed-data: ## Seed data into local source database (requires CSV file in data/)
 	@echo "${GREEN}Seeding data...${NC}"
-	@if [ ! -f "data/osopenuprn_202502.csv" ]; then \
-		echo "${YELLOW}Warning: CSV file not found at data/osopenuprn_202502.csv${NC}"; \
+	@CSV_FILE=$$(ls data/osopenuprn_*.csv 2>/dev/null | head -1); \
+	if [ -z "$$CSV_FILE" ]; then \
+		echo "${YELLOW}Warning: No CSV file found matching data/osopenuprn_*.csv${NC}"; \
 		echo "Download from: https://osdatahub.os.uk/downloads/open/OpenUPRN"; \
 		exit 1; \
 	fi

@@ -41,7 +41,7 @@ make setup-local
 This single command will:
 1. Start two PostgreSQL 17 databases using Docker Compose
 2. Create the required table schemas automatically
-3. Seed data if a CSV file is available at `data/osopenuprn_202502.csv`
+3. Seed data if a CSV file is available at `data/osopenuprn_*.csv`
 4. Display connection information
 
 ### Step-by-Step Setup
