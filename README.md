@@ -49,11 +49,14 @@ The easiest way to get started is using Docker Compose for local development:
 ### Quick Start
 
 ```bash
-# Complete setup: start databases, seed data, and generate .env
-make setup-local
+# Install dependencies (includes invoke)
+uv sync
 
-# Or use the script directly
-./setup-local.sh
+# Complete setup: start databases, seed data, and generate .env
+invoke setup-local
+
+# Or run the script directly
+python setup_local.py
 ```
 
 This will:
@@ -67,33 +70,37 @@ This will:
 For production or cloud-based testing, use Terraform to deploy Aurora PostgreSQL Serverless:
 
 ```bash
-# Initialize Terraform
-cd terraform
-terraform init
+invoke terraform-init
 
 # Configure variables (copy and edit the example file)
-cp terraform.tfvars.example terraform.tfvars
+cp terraform/terraform.tfvars.example terraform/terraform.tfvars
 # Edit terraform.tfvars with your AWS VPC and subnet IDs
 
-# Deploy infrastructure
-terraform apply
+invoke terraform-apply
 ```
-
-See [SETUP.md](SETUP.md) for detailed instructions.
 
 ## Option 3: Manual Local Setup
 
-If you prefer to use your own PostgreSQL installation, copy `.env.example` to `.env` and adjust the values, then create the databases and seed data manually.
+If you have an existing PostgreSQL installation:
+
+```bash
+createdb postgres   # source database
+createdb target     # target database
+psql -d postgres -f data/table_definitions.sql
+psql -d target -f data/table_definitions.sql
+python data/initial_upload.py
+```
 
 ## Prerequisites
 
+- **Python** >= 3.12 with [uv](https://docs.astral.sh/uv/) (manages dependencies)
 - **For Docker Setup**: Docker and Docker Compose
 - **For Terraform**: Terraform >= 1.0, AWS CLI, PostgreSQL client
 - **For Manual Setup**: PostgreSQL >= 12
 
 Check dependencies:
 ```bash
-make check-deps
+invoke check-deps
 ```
 
 # Running Benchmarks
@@ -103,19 +110,25 @@ All benchmarks are managed centrally. Each subfolder contains an ETL implementat
 ## Run All Benchmarks
 
 ```bash
-make test-all
+invoke test-all
 ```
 
 ## Run a Specific Benchmark
 
 ```bash
-make test-etl ETL=duckdb_copy
+invoke test-etl --etl duckdb_copy
 ```
 
 ## Build All Docker Images (without running)
 
 ```bash
-make build-all
+invoke build-all
+```
+
+## List All Available Tasks
+
+```bash
+invoke --list
 ```
 
 ## Available ETL Methods
@@ -142,3 +155,60 @@ After running benchmarks, a `benchmark_report.txt` file is generated with:
 - Peak memory usage
 - Source and target row counts
 - Pass/fail validation (source count must equal target count)
+
+# Database Reference
+
+## Local Connection Details
+
+| | Source | Target |
+|---|---|---|
+| Host | `localhost` | `localhost` |
+| Port | `5434` | `5433` |
+| Database | `postgres` | `target` |
+| User | `postgres` | `postgres` |
+| Password | `postgres` | `postgres` |
+
+Verify connectivity:
+```bash
+PGPASSWORD=postgres psql -h localhost -p 5434 -U postgres -d postgres -c "SELECT version();"
+PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -d target -c "SELECT version();"
+```
+
+## Table Schema
+
+```sql
+DROP TABLE IF EXISTS os_open_uprn_full;
+CREATE TABLE os_open_uprn_full (
+    uprn BIGINT NOT NULL,
+    x_coordinate FLOAT8 NOT NULL,
+    y_coordinate FLOAT8 NOT NULL,
+    latitude FLOAT8 NOT NULL,
+    longitude FLOAT8 NOT NULL
+);
+```
+
+`os_open_uprn` is derived from `os_open_uprn_full`. To load a smaller test dataset, edit the last line of `data/initial_upload.py` to add `LIMIT 2000000`.
+
+## AWS Seeding
+
+After `invoke terraform-apply`, seed the remote database:
+
+```bash
+DB_ENDPOINT=$(cd terraform && terraform output -raw cluster_endpoint)
+DB_USER=$(cd terraform && terraform output -raw master_username)
+DB_PASSWORD=$(cd terraform && terraform output -raw master_password)
+
+cd terraform && bash seed-database.sh
+```
+
+Then set your `.env` to point at the AWS cluster:
+```bash
+ORIGIN_ADDRESS=<cluster_endpoint>
+ORIGIN_DB=source
+ORIGIN_USER=<master_username>
+ORIGIN_PASS=<master_password>
+TARGET_ADDRESS=<cluster_endpoint>
+TARGET_DB=target
+TARGET_USER=<master_username>
+TARGET_PASS=<master_password>
+```
