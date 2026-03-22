@@ -93,10 +93,10 @@ python data/initial_upload.py
 
 ## Prerequisites
 
-- **Python** >= 3.12 with [uv](https://docs.astral.sh/uv/) (manages dependencies)
+- **Python** >= 3.12 with [uv](https://docs.astral.sh/uv/) (manages dependencies — includes `psycopg2-binary`, no system Postgres client needed)
 - **For Docker Setup**: Docker and Docker Compose
-- **For Terraform**: Terraform >= 1.0, AWS CLI, PostgreSQL client
-- **For Manual Setup**: PostgreSQL >= 12
+- **For Terraform**: Terraform >= 1.0, AWS CLI
+- **For Manual Setup**: PostgreSQL >= 12 server (client tools not required)
 
 Check dependencies:
 ```bash

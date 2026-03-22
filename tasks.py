@@ -173,7 +173,7 @@ def build_all(c):
 def check_deps(c):
     """Check that required CLI tools are installed."""
     missing = []
-    for dep in ("docker", "psql", "terraform"):
+    for dep in ("docker", "terraform"):
         if shutil.which(dep) is None:
             missing.append(dep)
     if missing:
@@ -181,7 +181,6 @@ def check_deps(c):
         sys.exit(1)
     c.run("docker --version")
     c.run("docker compose version")
-    c.run("psql --version")
     c.run("terraform --version")
     print("All dependencies found.")
 

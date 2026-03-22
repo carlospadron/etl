@@ -10,6 +10,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
+import psycopg2
+
 SCRIPT_DIR = Path(__file__).parent.resolve()
 DATA_DIR = SCRIPT_DIR / "data"
 
@@ -86,7 +88,7 @@ def error(msg: str) -> None:
 def check_dependencies() -> None:
     info("Checking dependencies...")
     missing = []
-    for dep in ("docker", "psql"):
+    for dep in ("docker",):
         if shutil.which(dep) is None:
             missing.append(dep)
     if missing:
@@ -116,20 +118,17 @@ def start_databases() -> None:
         ("Source", SOURCE_HOST, SOURCE_PORT, SOURCE_USER, SOURCE_PASS, SOURCE_DB),
         ("Target", TARGET_HOST, TARGET_PORT, TARGET_USER, TARGET_PASS, TARGET_DB),
     ):
-        env = {**os.environ, "PGPASSWORD": password}
         for attempt in range(1, 31):
-            result = subprocess.run(
-                ["psql", "-h", host, "-p", port, "-U", user, "-d", db, "-c", "SELECT 1"],
-                capture_output=True,
-                env=env,
-            )
-            if result.returncode == 0:
+            try:
+                conn = psycopg2.connect(host=host, port=int(port), user=user, password=password, dbname=db)
+                conn.close()
                 info(f"{label} database is ready")
                 break
-            if attempt == 30:
-                error(f"{label} database did not become ready in time")
-                sys.exit(1)
-            time.sleep(2)
+            except psycopg2.OperationalError:
+                if attempt == 30:
+                    error(f"{label} database did not become ready in time")
+                    sys.exit(1)
+                time.sleep(2)
 
 
 def seed_data() -> None:
@@ -147,29 +146,21 @@ def seed_data() -> None:
     info(f"Seeding data into source database from {csv_file}...")
     info("This may take a while depending on the size of your CSV file...")
 
-    env = {**os.environ, "PGPASSWORD": SOURCE_PASS}
-    base = ["-h", SOURCE_HOST, "-p", SOURCE_PORT, "-U", SOURCE_USER, "-d", SOURCE_DB]
-
-    subprocess.run(
-        ["psql", *base, "-c", f"\\copy os_open_uprn_full FROM '{csv_file}' WITH CSV HEADER"],
-        check=True,
-        env=env,
+    conn = psycopg2.connect(
+        host=SOURCE_HOST, port=int(SOURCE_PORT),
+        user=SOURCE_USER, password=SOURCE_PASS, dbname=SOURCE_DB,
     )
-    subprocess.run(["psql", *base, "-c", "DROP TABLE IF EXISTS os_open_uprn"], check=True, env=env)
-    subprocess.run(
-        ["psql", *base, "-c", "SELECT * INTO os_open_uprn FROM os_open_uprn_full"],
-        check=True,
-        env=env,
-    )
-
-    result = subprocess.run(
-        ["psql", *base, "-t", "-A", "-c", "SELECT COUNT(*) FROM os_open_uprn"],
-        capture_output=True,
-        text=True,
-        env=env,
-        check=True,
-    )
-    row_count = result.stdout.strip()
+    conn.autocommit = True
+    try:
+        with conn.cursor() as cur:
+            with open(csv_file, newline="", encoding="utf-8") as f:
+                cur.copy_expert("COPY os_open_uprn_full FROM STDIN WITH CSV HEADER", f)
+            cur.execute("DROP TABLE IF EXISTS os_open_uprn")
+            cur.execute("SELECT * INTO os_open_uprn FROM os_open_uprn_full")
+            cur.execute("SELECT COUNT(*) FROM os_open_uprn")
+            row_count = cur.fetchone()[0]
+    finally:
+        conn.close()
     info(f"Successfully seeded {row_count} rows into source database")
 
 

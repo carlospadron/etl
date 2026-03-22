@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Cross-platform replacement for initial_upload.sh"""
 
-import os
-import subprocess
 import sys
 from pathlib import Path
+
+import psycopg2
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 ROOT_DIR = SCRIPT_DIR.parent
@@ -26,11 +26,11 @@ def load_env() -> dict:
 def main() -> None:
     env_vars = load_env()
 
-    host = env_vars.get("ORIGIN_ADDRESS", os.environ.get("PGHOST", "localhost"))
-    port = env_vars.get("ORIGIN_PORT", os.environ.get("PGPORT", "5434"))
-    user = env_vars.get("ORIGIN_USER", os.environ.get("PGUSER", "postgres"))
-    password = env_vars.get("ORIGIN_PASS", os.environ.get("PGPASSWORD", "postgres"))
-    db = env_vars.get("ORIGIN_DB", os.environ.get("PGDATABASE", "postgres"))
+    host = env_vars.get("ORIGIN_ADDRESS", "localhost")
+    port = int(env_vars.get("ORIGIN_PORT", "5434"))
+    user = env_vars.get("ORIGIN_USER", "postgres")
+    password = env_vars.get("ORIGIN_PASS", "postgres")
+    db = env_vars.get("ORIGIN_DB", "postgres")
 
     csv_files = sorted(SCRIPT_DIR.glob("osopenuprn_*.csv"))
     if not csv_files:
@@ -40,34 +40,24 @@ def main() -> None:
     csv_file = csv_files[0]
     print(f"Using CSV file: {csv_file}")
 
-    psql_env = {**os.environ, "PGPASSWORD": password}
-    base = ["-h", host, "-p", port, "-U", user, "-d", db]
+    table_sql = (SCRIPT_DIR / "table_definitions.sql").read_text()
 
-    subprocess.run(
-        ["psql", *base, "-f", str(SCRIPT_DIR / "table_definitions.sql")],
-        check=True,
-        env=psql_env,
-    )
-    subprocess.run(
-        ["psql", *base, "-c", f"\\copy os_open_uprn_full FROM '{csv_file}' WITH CSV HEADER"],
-        check=True,
-        env=psql_env,
-    )
-    subprocess.run(
-        ["psql", *base, "-c", "DROP TABLE IF EXISTS os_open_uprn"],
-        check=True,
-        env=psql_env,
-    )
-    subprocess.run(
-        ["psql", *base, "-c", "SELECT * INTO os_open_uprn FROM os_open_uprn_full"],
-        check=True,
-        env=psql_env,
-    )
-    # Uncomment to load only 2 million rows for testing:
-    # subprocess.run(
-    #     ["psql", *base, "-c", "SELECT * INTO os_open_uprn FROM os_open_uprn_full LIMIT 2000000"],
-    #     check=True, env=psql_env,
-    # )
+    conn = psycopg2.connect(host=host, port=port, user=user, password=password, dbname=db)
+    conn.autocommit = True
+    try:
+        with conn.cursor() as cur:
+            cur.execute(table_sql)
+            print("Table definitions applied.")
+            with open(csv_file, newline="", encoding="utf-8") as f:
+                cur.copy_expert("COPY os_open_uprn_full FROM STDIN WITH CSV HEADER", f)
+            print("CSV loaded into os_open_uprn_full.")
+            cur.execute("DROP TABLE IF EXISTS os_open_uprn")
+            cur.execute("SELECT * INTO os_open_uprn FROM os_open_uprn_full")
+            # To load only 2 million rows for testing, replace the line above with:
+            # cur.execute("SELECT * INTO os_open_uprn FROM os_open_uprn_full LIMIT 2000000")
+            print("os_open_uprn created.")
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":

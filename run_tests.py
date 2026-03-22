@@ -22,6 +22,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+import psycopg2
+
 SCRIPT_DIR = Path(__file__).parent.resolve()
 DEFAULT_ENV_FILE = SCRIPT_DIR / ".env"
 REPORT_FILE = SCRIPT_DIR / "benchmark_report.txt"
@@ -58,7 +60,7 @@ def error(msg: str) -> None:
 def load_env(env_file: Path) -> dict:
     if not env_file.exists():
         error(f".env file not found at {env_file}")
-        info("Run 'task setup-local' to generate it.")
+        info("Run 'invoke setup-local' to generate it.")
         sys.exit(1)
     env = {}
     for line in env_file.read_text().splitlines():
@@ -71,28 +73,29 @@ def load_env(env_file: Path) -> dict:
 
 
 def get_row_count(host: str, port: str, user: str, password: str, db: str, table: str) -> str:
-    result = subprocess.run(
-        ["psql", "-h", host, "-p", port, "-U", user, "-d", db, "-t", "-A", "-c", f"SELECT COUNT(*) FROM {table}"],
-        capture_output=True,
-        text=True,
-        env={**os.environ, "PGPASSWORD": password},
-    )
-    return result.stdout.strip() if result.returncode == 0 else "ERROR"
+    try:
+        conn = psycopg2.connect(host=host, port=int(port), user=user, password=password, dbname=db)
+        with conn.cursor() as cur:
+            cur.execute(f"SELECT COUNT(*) FROM {table}")
+            count = cur.fetchone()[0]
+        conn.close()
+        return str(count)
+    except Exception:
+        return "ERROR"
 
 
 def truncate_target_table(table: str, env: dict) -> None:
-    subprocess.run(
-        [
-            "psql",
-            "-h", env["TARGET_ADDRESS"],
-            "-p", env["TARGET_PORT"],
-            "-U", env["TARGET_USER"],
-            "-d", env["TARGET_DB"],
-            "-c", f"TRUNCATE TABLE {table}",
-        ],
-        capture_output=True,
-        env={**os.environ, "PGPASSWORD": env["TARGET_PASS"]},
-    )
+    try:
+        conn = psycopg2.connect(
+            host=env["TARGET_ADDRESS"], port=int(env["TARGET_PORT"]),
+            user=env["TARGET_USER"], password=env["TARGET_PASS"], dbname=env["TARGET_DB"],
+        )
+        conn.autocommit = True
+        with conn.cursor() as cur:
+            cur.execute(f"TRUNCATE TABLE {table}")
+        conn.close()
+    except Exception:
+        pass
 
 
 def _parse_memory_mib(value: str) -> float:
