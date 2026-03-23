@@ -31,6 +31,7 @@ ALL_METHODS = [
     "pyspark_write",
     "sling",
     "spark",
+    "meltano",
 ]
 
 
@@ -132,26 +133,30 @@ def terraform_output(c):
 
 
 @task(
-    help={"dataset": "Dataset size: '2m' for 2 million rows or 'full' for complete dataset (default: full)"},
+    help={"dataset": "Dataset size: '2m' for 2 million rows or 'full' for complete dataset (default: full)",
+          "rebuild": "Force rebuild of Docker images even if they already exist"},
 )
-def test_all(c, dataset="full"):
+def test_all(c, dataset="full", rebuild=False):
     """Run all ETL benchmarks (build, run, monitor, validate, report)."""
-    c.run(f"uv run python {SCRIPT_DIR / 'run_tests.py'} --dataset {dataset}")
+    rebuild_flag = " --rebuild" if rebuild else ""
+    c.run(f"uv run python {SCRIPT_DIR / 'run_tests.py'} --dataset {dataset}{rebuild_flag}")
 
 
 @task(
     help={
         "etl": f"ETL method to run. One of: {', '.join(ALL_METHODS)}",
         "dataset": "Dataset size: '2m' for 2 million rows or 'full' for complete dataset (default: full)",
+        "rebuild": "Force rebuild of Docker images even if they already exist",
     },
 )
-def test_etl(c, etl, dataset="full"):
+def test_etl(c, etl, dataset="full", rebuild=False):
     """Run a single ETL benchmark. Use --etl to specify the method."""
     if etl not in ALL_METHODS:
         print(f"Unknown method: {etl}")
         print(f"Available: {', '.join(ALL_METHODS)}")
         sys.exit(1)
-    c.run(f"uv run python {SCRIPT_DIR / 'run_tests.py'} {etl} --dataset {dataset}")
+    rebuild_flag = " --rebuild" if rebuild else ""
+    c.run(f"uv run python {SCRIPT_DIR / 'run_tests.py'} {etl} --dataset {dataset}{rebuild_flag}")
 
 
 # ---------------------------------------------------------------------------

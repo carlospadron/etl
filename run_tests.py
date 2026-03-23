@@ -46,6 +46,7 @@ ALL_METHODS = [
     "pyspark_write",
     "sling",
     "spark",
+    "meltano",
 ]
 
 
@@ -168,11 +169,19 @@ def get_image_size(method: str) -> str:
         return "N/A"
 
 
-def build_image(method: str) -> bool:
+def build_image(method: str, force: bool = False) -> bool:
     method_dir = SCRIPT_DIR / method
     if not (method_dir / "Dockerfile").exists():
         error(f"No Dockerfile found for {method}")
         return False
+    if not force:
+        check = subprocess.run(
+            ["docker", "image", "inspect", f"etl-{method}"],
+            capture_output=True,
+        )
+        if check.returncode == 0:
+            info(f"Image etl-{method} already exists, skipping build")
+            return True
     info(f"Building image for {method}...")
     result = subprocess.run(
         ["docker", "build", "-t", f"etl-{method}", str(method_dir)],
@@ -180,7 +189,7 @@ def build_image(method: str) -> bool:
     return result.returncode == 0
 
 
-def run_single_test(method: str, env: dict, env_file: Path, dataset: str = "full") -> dict:
+def run_single_test(method: str, env: dict, env_file: Path, dataset: str = "full", rebuild: bool = False) -> dict:
     source_table = "os_open_uprn_2m" if dataset == "2m" else "os_open_uprn"
     target_table = "os_open_uprn"
     container_name = f"etl-{method}"
@@ -190,7 +199,7 @@ def run_single_test(method: str, env: dict, env_file: Path, dataset: str = "full
 
     info(f"--- Running: {method} ---")
 
-    if not build_image(method):
+    if not build_image(method, force=rebuild):
         return {
             "method": method, "exit_code": -1, "duration": 0,
             "image_size": "N/A", "peak_mem": "N/A",
@@ -372,6 +381,11 @@ def main() -> None:
         default="full",
         help="Dataset size: '2m' for 2,000,000 rows or 'full' for the complete dataset (default: full)",
     )
+    parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="Force rebuild of Docker images even if they already exist",
+    )
     args = parser.parse_args()
 
     methods = args.methods or ALL_METHODS
@@ -390,7 +404,7 @@ def main() -> None:
 
     results = []
     for method in methods:
-        results.append(run_single_test(method, env, env_file, args.dataset))
+        results.append(run_single_test(method, env, env_file, args.dataset, rebuild=args.rebuild))
         print()
 
     generate_report(results, env, args.dataset)

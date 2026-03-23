@@ -162,6 +162,7 @@ uv run invoke --list
 | `pyspark_write` | PySpark JDBC read + JDBC write |
 | `sling` | Sling full-refresh replication |
 | `spark` | Scala Spark JDBC read + JDBC write |
+| `meltano` | Meltano EL with tap-postgres + target-postgres |
 
 ## Benchmark Report
 

@@ -1,6 +1,6 @@
 - change data to geospatial data and make it bigger
 - add to comparison: can create tables and indexes, uses checkpoints, it is custom made
-- add meltano
+- add logical replication
 - add debezium
 - add sqlalchemy custom
 - add pyspark stream
