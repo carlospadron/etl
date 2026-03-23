@@ -242,3 +242,28 @@ TARGET_DB=target
 TARGET_USER=<master_username>
 TARGET_PASS=<master_password>
 ```
+
+# Results
+
+Charts are generated from `benchmark_report.csv` (best passing run per method × dataset).
+
+Regenerate after running benchmarks:
+```bash
+uv run python plot_results.py
+```
+
+## Speed (Duration)
+
+![Speed](results/speed.png)
+
+## Image Size
+
+![Image Size](results/image_size.png)
+
+## Peak Memory
+
+![Peak Memory](results/peak_mem.png)
+
+## Composite Rank (Speed + Memory)
+
+![Composite Rank](results/rank.png)
