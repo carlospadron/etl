@@ -337,9 +337,11 @@ def generate_report(results: list[dict], env: dict, dataset: str) -> None:
 
     fieldnames = ["method", "dataset", "duration_s", "image_size", "peak_mem_mib",
                   "source_count", "target_count", "status"]
-    with CSV_FILE.open("w", newline="") as f:
+    write_header = not CSV_FILE.exists() or CSV_FILE.stat().st_size == 0
+    with CSV_FILE.open("a", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
-        writer.writeheader()
+        if write_header:
+            writer.writeheader()
         for r in results:
             peak_raw = r["peak_mem"]
             try:
