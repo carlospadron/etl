@@ -8,4 +8,3 @@
 - add airbyte (proving a bit complex as airbyte is meant to be run as an independet server and pyairbyte is not a replacement)
 - add a larger dataset
 - add results to markdoen and drop notebook
-- consolidate must things into python to make it easier to run in any environment
