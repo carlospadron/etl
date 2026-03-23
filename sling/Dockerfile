@@ -24,11 +24,7 @@ COPY pyproject.toml uv.lock ./
 # Install Python dependencies using uv
 RUN uv sync --frozen --no-dev
 
-# Copy the bash script into the container
-COPY sling.sh /usr/local/bin/sling.sh
+# Copy source files
+COPY . .
 
-# Make the script executable
-RUN chmod +x /usr/local/bin/sling.sh
-
-# Set the entrypoint to execute the bash script
-ENTRYPOINT ["uv", "run", "sh", "/usr/local/bin/sling.sh"]
+ENTRYPOINT ["uv", "run", "python", "main.py"]

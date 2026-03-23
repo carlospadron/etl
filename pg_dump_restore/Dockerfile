@@ -1,23 +1,28 @@
-# Use a lightweight base image
-FROM ubuntu:latest
+# python:3.12-slim (Debian bookworm) as base; add PostgreSQL 17 client from the
+# official pgdg apt repo so pg_dump/pg_restore match the server version exactly
+FROM python:3.12-slim
 
-# Set environment variables for non-interactive installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install PostgreSQL client and other necessary packages
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    postgresql-client \
-    ca-certificates \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl gnupg2 \
+    && curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+        | gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg \
+    && . /etc/os-release \
+    && echo "deb https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+        > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends postgresql-client-17 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the bash script into the container
-COPY el_job.sh /usr/local/bin/el_job.sh
-COPY table_definitions.sql .
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
-# Make the script executable
-RUN chmod +x /usr/local/bin/el_job.sh
+WORKDIR /app
 
-# Set the entrypoint to execute the bash script
-ENTRYPOINT ["/usr/local/bin/el_job.sh"]
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev
+
+COPY . .
+
+ENTRYPOINT ["uv", "run", "python", "main.py"]
