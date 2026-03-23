@@ -48,6 +48,7 @@ ALL_METHODS = [
     "spark",
     "meltano",
     "dlt",
+    "psycopg2_copy",
 ]
 
 
@@ -95,6 +96,20 @@ def get_row_count(host: str, port: str, user: str, password: str, db: str, table
 
 
 def truncate_target_table(table: str, env: dict) -> None:
+    # Drop and recreate to reset any schema modifications made by previous tools
+    # (e.g. dlt adds _dlt_load_id/_dlt_id columns with NOT NULL constraints).
+    # Use two separate execute() calls — psycopg2 does not allow multiple
+    # statements in a single execute() call.
+    ddl_drop = f"DROP TABLE IF EXISTS {table} CASCADE"
+    ddl_create = (
+        f"CREATE TABLE {table} ("
+        f"uprn BIGINT NOT NULL, "
+        f"x_coordinate FLOAT8 NOT NULL, "
+        f"y_coordinate FLOAT8 NOT NULL, "
+        f"latitude FLOAT8 NOT NULL, "
+        f"longitude FLOAT8 NOT NULL"
+        f")"
+    )
     try:
         conn = psycopg2.connect(
             host=env["TARGET_ADDRESS"], port=int(env["TARGET_PORT"]),
@@ -102,7 +117,8 @@ def truncate_target_table(table: str, env: dict) -> None:
         )
         conn.autocommit = True
         with conn.cursor() as cur:
-            cur.execute(f"TRUNCATE TABLE {table}")
+            cur.execute(ddl_drop)
+            cur.execute(ddl_create)
         conn.close()
     except Exception:
         pass

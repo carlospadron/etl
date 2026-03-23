@@ -33,6 +33,7 @@ ALL_METHODS = [
     "spark",
     "meltano",
     "dlt",
+    "psycopg2_copy",
 ]
 
 
