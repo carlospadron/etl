@@ -98,9 +98,9 @@ def get_row_count(host: str, port: str, user: str, password: str, db: str, table
 def truncate_target_table(table: str, env: dict) -> None:
     # Drop and recreate to reset any schema modifications made by previous tools
     # (e.g. dlt adds _dlt_load_id/_dlt_id columns with NOT NULL constraints).
-    # Use two separate execute() calls — psycopg2 does not allow multiple
+    # Also drop dlt metadata tables so each dlt run starts with a clean state.
+    # Use separate execute() calls — psycopg2 does not allow multiple
     # statements in a single execute() call.
-    ddl_drop = f"DROP TABLE IF EXISTS {table} CASCADE"
     ddl_create = (
         f"CREATE TABLE {table} ("
         f"uprn BIGINT NOT NULL, "
@@ -117,8 +117,15 @@ def truncate_target_table(table: str, env: dict) -> None:
         )
         conn.autocommit = True
         with conn.cursor() as cur:
-            cur.execute(ddl_drop)
+            cur.execute(f"DROP TABLE IF EXISTS {table} CASCADE")
             cur.execute(ddl_create)
+            # Clean up dlt metadata tables so each dlt run starts without stale state
+            cur.execute(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema = 'public' AND table_name LIKE '_dlt_%'"
+            )
+            for (dlt_table,) in cur.fetchall():
+                cur.execute(f"DROP TABLE IF EXISTS {dlt_table} CASCADE")
         conn.close()
     except Exception:
         pass
