@@ -13,6 +13,7 @@ Usage:
 """
 
 import argparse
+import csv
 import subprocess
 import sys
 import tempfile
@@ -27,6 +28,7 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 DEFAULT_ENV_FILE = SCRIPT_DIR / ".env"
 DOCKER_ENV_FILE = SCRIPT_DIR / ".env.docker"
 REPORT_FILE = SCRIPT_DIR / "benchmark_report.txt"
+CSV_FILE = SCRIPT_DIR / "benchmark_report.csv"
 MEMORY_INTERVAL = 2  # seconds between docker stats polls
 TASK_TIMEOUT = 600   # seconds before a container is killed (10 minutes)
 DOCKER_NETWORK = "etl_etl-network"
@@ -150,6 +152,22 @@ def get_peak_memory(log_path: Path) -> str:
     return f"{peak:.1f}MiB" if peak > 0 else "N/A"
 
 
+def get_image_size(method: str) -> str:
+    result = subprocess.run(
+        ["docker", "inspect", "--format", "{{.Size}}", f"etl-{method}"],
+        capture_output=True, text=True,
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        return "N/A"
+    try:
+        size_bytes = int(result.stdout.strip())
+        if size_bytes >= 1_073_741_824:
+            return f"{size_bytes / 1_073_741_824:.1f}GiB"
+        return f"{size_bytes / 1_048_576:.1f}MiB"
+    except ValueError:
+        return "N/A"
+
+
 def build_image(method: str) -> bool:
     method_dir = SCRIPT_DIR / method
     if not (method_dir / "Dockerfile").exists():
@@ -176,9 +194,12 @@ def run_single_test(method: str, env: dict, env_file: Path, dataset: str = "full
     if not build_image(method):
         return {
             "method": method, "exit_code": -1, "duration": 0,
-            "peak_mem": "N/A", "source_count": "N/A", "target_count": "N/A",
+            "image_size": "N/A", "peak_mem": "N/A",
+            "source_count": "N/A", "target_count": "N/A",
             "status": "FAIL (build failed)",
         }
+
+    image_size = get_image_size(method)
 
     truncate_target_table(target_table, env)
 
@@ -258,14 +279,15 @@ def run_single_test(method: str, env: dict, env_file: Path, dataset: str = "full
     subprocess.run(["docker", "rm", "-f", container_name], capture_output=True)
 
     if status == "PASS":
-        info(f"{method}: PASS ({duration}s, peak {peak_mem})")
+        info(f"{method}: PASS ({duration}s, image {image_size}, peak {peak_mem})")
     else:
         error(f"{method}: {status} ({duration}s)")
 
     return {
         "method": method, "exit_code": exit_code, "duration": duration,
-        "peak_mem": peak_mem, "source_count": source_count,
-        "target_count": target_count, "status": status,
+        "image_size": image_size, "peak_mem": peak_mem,
+        "source_count": source_count, "target_count": target_count,
+        "status": status,
     }
 
 
@@ -294,6 +316,7 @@ def generate_report(results: list[dict], env: dict, dataset: str) -> None:
         lines += [
             f"Test: {r['method']}",
             f"  Duration:     {r['duration']}s",
+            f"  Image Size:   {r['image_size']}",
             f"  Peak Memory:  {r['peak_mem']}",
             f"  Source Count: {r['source_count']}",
             f"  Target Count: {r['target_count']}",
@@ -312,6 +335,30 @@ def generate_report(results: list[dict], env: dict, dataset: str) -> None:
 
     REPORT_FILE.write_text("\n".join(lines) + "\n")
     info(f"Report written to {REPORT_FILE}")
+
+    fieldnames = ["method", "dataset", "duration_s", "image_size", "peak_mem_mib",
+                  "source_count", "target_count", "status"]
+    with CSV_FILE.open("w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for r in results:
+            peak_raw = r["peak_mem"]
+            try:
+                peak_mib = float(peak_raw.replace("MiB", "")) if "MiB" in peak_raw else (
+                    float(peak_raw.replace("GiB", "")) * 1024 if "GiB" in peak_raw else "")
+            except (ValueError, AttributeError):
+                peak_mib = ""
+            writer.writerow({
+                "method": r["method"],
+                "dataset": dataset,
+                "duration_s": r["duration"],
+                "image_size": r["image_size"],
+                "peak_mem_mib": peak_mib,
+                "source_count": r["source_count"],
+                "target_count": r["target_count"],
+                "status": r["status"],
+            })
+    info(f"CSV written to {CSV_FILE}")
 
 
 def main() -> None:

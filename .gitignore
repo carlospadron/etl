@@ -1,4 +1,5 @@
 .env
+.env.docker
 memory_usage.log
 benchmark_report.txt
 .metals
@@ -15,4 +16,5 @@ terraform/.terraform.lock.hcl
 terraform/*.tfstate
 terraform/*.tfstate.backup
 terraform/terraform.tfstate.d/
+
 
