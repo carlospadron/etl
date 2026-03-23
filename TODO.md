@@ -1,6 +1,3 @@
-- change data to geospatial data and make it bigger
-- add to comparison: can create tables and indexes, uses checkpoints, it is custom made
-- add a larger dataset
-- add results to markdoen and drop notebook
-- create comparison plot for notebook
-- add rank of code easyness for final rank
+- add wkb column to source table
+- add rust
+- add go
