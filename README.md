@@ -110,13 +110,18 @@ All benchmarks are managed centrally. Each subfolder contains an ETL implementat
 ## Run All Benchmarks
 
 ```bash
+# Full dataset (default)
 uv run invoke test-all
+
+# 2 million row subset
+uv run invoke test-all --dataset 2m
 ```
 
 ## Run a Specific Benchmark
 
 ```bash
 uv run invoke test-etl --etl duckdb_copy
+uv run invoke test-etl --etl duckdb_copy --dataset 2m
 ```
 
 ## Build All Docker Images (without running)
@@ -187,8 +192,7 @@ PGPASSWORD=postgres psql -h localhost -p 5433 -U postgres -d target -c "SELECT v
 ## Table Schema
 
 ```sql
-DROP TABLE IF EXISTS os_open_uprn_full;
-CREATE TABLE os_open_uprn_full (
+CREATE TABLE os_open_uprn (
     uprn BIGINT NOT NULL,
     x_coordinate FLOAT8 NOT NULL,
     y_coordinate FLOAT8 NOT NULL,
@@ -197,7 +201,7 @@ CREATE TABLE os_open_uprn_full (
 );
 ```
 
-`os_open_uprn` is derived from `os_open_uprn_full`. To load a smaller test dataset, edit the last line of `data/initial_upload.py` to add `LIMIT 2000000`.
+`os_open_uprn_2m` is pre-built at setup time as a 2,000,000-row subset of `os_open_uprn`.
 
 ## AWS Seeding
 
@@ -208,7 +212,7 @@ DB_ENDPOINT=$(cd terraform && terraform output -raw cluster_endpoint)
 DB_USER=$(cd terraform && terraform output -raw master_username)
 DB_PASSWORD=$(cd terraform && terraform output -raw master_password)
 
-cd terraform && bash seed-database.sh
+cd terraform && uv run python seed-database.py
 ```
 
 Then set your `.env` to point at the AWS cluster:

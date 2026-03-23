@@ -28,6 +28,7 @@ DEFAULT_ENV_FILE = SCRIPT_DIR / ".env"
 DOCKER_ENV_FILE = SCRIPT_DIR / ".env.docker"
 REPORT_FILE = SCRIPT_DIR / "benchmark_report.txt"
 MEMORY_INTERVAL = 2  # seconds between docker stats polls
+TASK_TIMEOUT = 600   # seconds before a container is killed (10 minutes)
 DOCKER_NETWORK = "etl_etl-network"
 
 ALL_METHODS = [
@@ -162,8 +163,9 @@ def build_image(method: str) -> bool:
     return result.returncode == 0
 
 
-def run_single_test(method: str, env: dict, env_file: Path) -> dict:
-    table = "os_open_uprn"
+def run_single_test(method: str, env: dict, env_file: Path, dataset: str = "full") -> dict:
+    source_table = "os_open_uprn_2m" if dataset == "2m" else "os_open_uprn"
+    target_table = "os_open_uprn"
     container_name = f"etl-{method}"
 
     with tempfile.NamedTemporaryFile(suffix=".csv", delete=False) as tmp:
@@ -178,11 +180,11 @@ def run_single_test(method: str, env: dict, env_file: Path) -> dict:
             "status": "FAIL (build failed)",
         }
 
-    truncate_target_table(table, env)
+    truncate_target_table(target_table, env)
 
     source_count = get_row_count(
         env["ORIGIN_ADDRESS"], env["ORIGIN_PORT"],
-        env["ORIGIN_USER"], env["ORIGIN_PASS"], env["ORIGIN_DB"], table,
+        env["ORIGIN_USER"], env["ORIGIN_PASS"], env["ORIGIN_DB"], source_table,
     )
 
     # Remove any previous container with the same name
@@ -195,6 +197,7 @@ def run_single_test(method: str, env: dict, env_file: Path) -> dict:
             "--name", container_name,
             "--network", DOCKER_NETWORK,
             "--env-file", str(DOCKER_ENV_FILE),
+            "-e", f"SOURCE_TABLE={source_table}",
             f"etl-{method}",
         ],
         check=True,
@@ -207,9 +210,28 @@ def run_single_test(method: str, env: dict, env_file: Path) -> dict:
     )
     monitor_thread.start()
 
-    result = subprocess.run(["docker", "wait", container_name], capture_output=True, text=True)
+    # Poll until the container exits or the timeout is reached
+    timed_out = False
+    while True:
+        inspect = subprocess.run(
+            ["docker", "inspect", "--format", "{{.State.Status}}", container_name],
+            capture_output=True, text=True,
+        )
+        if inspect.stdout.strip() != "running":
+            break
+        if time.monotonic() - start_time >= TASK_TIMEOUT:
+            warn(f"{method}: timeout after {TASK_TIMEOUT}s — killing container")
+            subprocess.run(["docker", "kill", container_name], capture_output=True)
+            timed_out = True
+            break
+        time.sleep(2)
+
+    exit_result = subprocess.run(
+        ["docker", "inspect", "--format", "{{.State.ExitCode}}", container_name],
+        capture_output=True, text=True,
+    )
     duration = int(time.monotonic() - start_time)
-    exit_code = int(result.stdout.strip()) if result.returncode == 0 else 1
+    exit_code = 137 if timed_out else (int(exit_result.stdout.strip()) if exit_result.returncode == 0 else 1)
 
     stop_event.set()
     monitor_thread.join(timeout=MEMORY_INTERVAL + 1)
@@ -219,10 +241,12 @@ def run_single_test(method: str, env: dict, env_file: Path) -> dict:
 
     target_count = get_row_count(
         env["TARGET_ADDRESS"], env["TARGET_PORT"],
-        env["TARGET_USER"], env["TARGET_PASS"], env["TARGET_DB"], table,
+        env["TARGET_USER"], env["TARGET_PASS"], env["TARGET_DB"], target_table,
     )
 
-    if exit_code != 0:
+    if timed_out:
+        status = f"FAIL (timeout {TASK_TIMEOUT}s)"
+    elif exit_code != 0:
         status = f"FAIL (exit code {exit_code})"
     elif "ERROR" in (source_count, target_count):
         status = "FAIL (count error)"
@@ -245,15 +269,17 @@ def run_single_test(method: str, env: dict, env_file: Path) -> dict:
     }
 
 
-def generate_report(results: list[dict], env: dict) -> None:
+def generate_report(results: list[dict], env: dict, dataset: str) -> None:
     passed = sum(1 for r in results if r["status"] == "PASS")
     failed = len(results) - passed
+    dataset_label = "2,000,000 rows" if dataset == "2m" else "Full dataset"
 
     lines = [
         "============================================",
         "  ETL Benchmark Report",
         "============================================",
-        f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Date:    {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Dataset: {dataset_label}",
         "",
         f"Source: {env['ORIGIN_ADDRESS']}:{env['ORIGIN_PORT']}/{env['ORIGIN_DB']}",
         f"Target: {env['TARGET_ADDRESS']}:{env['TARGET_PORT']}/{env['TARGET_DB']}",
@@ -292,6 +318,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run ETL benchmarks.")
     parser.add_argument("methods", nargs="*", help="Methods to run (default: all)")
     parser.add_argument("--env", default=str(DEFAULT_ENV_FILE), help="Path to .env file")
+    parser.add_argument(
+        "--dataset",
+        choices=["2m", "full"],
+        default="full",
+        help="Dataset size: '2m' for 2,000,000 rows or 'full' for the complete dataset (default: full)",
+    )
     args = parser.parse_args()
 
     methods = args.methods or ALL_METHODS
@@ -310,10 +342,10 @@ def main() -> None:
 
     results = []
     for method in methods:
-        results.append(run_single_test(method, env, env_file))
+        results.append(run_single_test(method, env, env_file, args.dataset))
         print()
 
-    generate_report(results, env)
+    generate_report(results, env, args.dataset)
     print()
     print(REPORT_FILE.read_text())
 
