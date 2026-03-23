@@ -8,3 +8,5 @@
 - add airbyte (proving a bit complex as airbyte is meant to be run as an independet server and pyairbyte is not a replacement)
 - add a larger dataset
 - add results to markdoen and drop notebook
+- create comparison plot for notebook
+- add rank of code easyness for final rank
