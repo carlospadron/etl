@@ -50,15 +50,15 @@ ALL_METHODS = [
 
 
 def info(msg: str) -> None:
-    print(f"[INFO] {msg}")
+    print(f"[INFO] {msg}", flush=True)
 
 
 def warn(msg: str) -> None:
-    print(f"[WARN] {msg}")
+    print(f"[WARN] {msg}", flush=True)
 
 
 def error(msg: str) -> None:
-    print(f"[ERROR] {msg}", file=sys.stderr)
+    print(f"[ERROR] {msg}", file=sys.stderr, flush=True)
 
 
 def load_env(env_file: Path) -> dict:
@@ -176,7 +176,6 @@ def build_image(method: str) -> bool:
     info(f"Building image for {method}...")
     result = subprocess.run(
         ["docker", "build", "-t", f"etl-{method}", str(method_dir)],
-        capture_output=True,
     )
     return result.returncode == 0
 
