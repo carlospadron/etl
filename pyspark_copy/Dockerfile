@@ -1,26 +1,20 @@
-# Stage 1: Build stage to install OpenJDK
-FROM openjdk:11-jre-slim AS jdk
-
-# Stage 2: Build stage to install Python and application dependencies
 FROM python:3.12-slim
 
 # Set environment variables for non-interactive installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Copy OpenJDK from the first stage
-COPY --from=jdk /usr/local/openjdk-11 /usr/local/openjdk-11
-
-# Set JAVA_HOME environment variable
-ENV JAVA_HOME=/usr/local/openjdk-11
-ENV PATH="${JAVA_HOME}/bin:${PATH}"
-
-# Install necessary system packages
+# Install necessary system packages including Java
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    default-jre-headless \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Set JAVA_HOME environment variable
+ENV JAVA_HOME=/usr/lib/jvm/default-java
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
 
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
