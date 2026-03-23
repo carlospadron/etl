@@ -25,8 +25,10 @@ import psycopg2
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 DEFAULT_ENV_FILE = SCRIPT_DIR / ".env"
+DOCKER_ENV_FILE = SCRIPT_DIR / ".env.docker"
 REPORT_FILE = SCRIPT_DIR / "benchmark_report.txt"
 MEMORY_INTERVAL = 2  # seconds between docker stats polls
+DOCKER_NETWORK = "etl_etl-network"
 
 ALL_METHODS = [
     "duckdb_copy",
@@ -59,7 +61,11 @@ def error(msg: str) -> None:
 def load_env(env_file: Path) -> dict:
     if not env_file.exists():
         error(f".env file not found at {env_file}")
-        info("Run 'invoke setup-local' to generate it.")
+        info("Run 'uv run invoke setup-local' to generate it.")
+        sys.exit(1)
+    if not DOCKER_ENV_FILE.exists():
+        error(f".env.docker file not found at {DOCKER_ENV_FILE}")
+        info("Run 'uv run invoke setup-local' to generate it.")
         sys.exit(1)
     env = {}
     for line in env_file.read_text().splitlines():
@@ -187,8 +193,8 @@ def run_single_test(method: str, env: dict, env_file: Path) -> dict:
         [
             "docker", "run", "-d",
             "--name", container_name,
-            "--network", "host",
-            "--env-file", str(env_file),
+            "--network", DOCKER_NETWORK,
+            "--env-file", str(DOCKER_ENV_FILE),
             f"etl-{method}",
         ],
         check=True,

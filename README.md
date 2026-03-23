@@ -125,6 +125,16 @@ uv run invoke test-etl --etl duckdb_copy
 uv run invoke build-all
 ```
 
+## Stop and Clean Local Databases
+
+```bash
+# Stop databases (preserves data)
+uv run invoke stop-local
+
+# Stop and remove databases and all data volumes
+uv run invoke clean-local
+```
+
 ## List All Available Tasks
 
 ```bash
