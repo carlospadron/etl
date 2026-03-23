@@ -42,7 +42,7 @@ ALL_METHODS = [
 @task
 def setup_local(c):
     """Complete setup: start databases and seed data."""
-    c.run(f"python {SCRIPT_DIR / 'setup_local.py'}")
+    c.run(f"uv run python {SCRIPT_DIR / 'setup_local.py'}")
 
 
 @task
@@ -72,7 +72,7 @@ def logs_local(c):
 @task
 def seed_data(c):
     """Seed data into local source database (requires CSV file in data/)."""
-    c.run(f"python {SCRIPT_DIR / 'data' / 'initial_upload.py'}")
+    c.run(f"uv run python {SCRIPT_DIR / 'data' / 'initial_upload.py'}")
 
 
 # ---------------------------------------------------------------------------
@@ -134,7 +134,7 @@ def terraform_output(c):
 @task
 def test_all(c):
     """Run all ETL benchmarks (build, run, monitor, validate, report)."""
-    c.run(f"python {SCRIPT_DIR / 'run_tests.py'}")
+    c.run(f"uv run python {SCRIPT_DIR / 'run_tests.py'}")
 
 
 @task(
@@ -146,7 +146,7 @@ def test_etl(c, etl):
         print(f"Unknown method: {etl}")
         print(f"Available: {', '.join(ALL_METHODS)}")
         sys.exit(1)
-    c.run(f"python {SCRIPT_DIR / 'run_tests.py'} {etl}")
+    c.run(f"uv run python {SCRIPT_DIR / 'run_tests.py'} {etl}")
 
 
 # ---------------------------------------------------------------------------

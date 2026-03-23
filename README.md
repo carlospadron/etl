@@ -53,7 +53,7 @@ The easiest way to get started is using Docker Compose for local development:
 uv sync
 
 # Complete setup: start databases, seed data, and generate .env
-invoke setup-local
+uv run invoke setup-local
 
 # Or run the script directly
 python setup_local.py
@@ -70,13 +70,13 @@ This will:
 For production or cloud-based testing, use Terraform to deploy Aurora PostgreSQL Serverless:
 
 ```bash
-invoke terraform-init
+uv run invoke terraform-init
 
 # Configure variables (copy and edit the example file)
 cp terraform/terraform.tfvars.example terraform/terraform.tfvars
 # Edit terraform.tfvars with your AWS VPC and subnet IDs
 
-invoke terraform-apply
+uv run invoke terraform-apply
 ```
 
 ## Option 3: Manual Local Setup
@@ -100,7 +100,7 @@ python data/initial_upload.py
 
 Check dependencies:
 ```bash
-invoke check-deps
+uv run invoke check-deps
 ```
 
 # Running Benchmarks
@@ -110,25 +110,25 @@ All benchmarks are managed centrally. Each subfolder contains an ETL implementat
 ## Run All Benchmarks
 
 ```bash
-invoke test-all
+uv run invoke test-all
 ```
 
 ## Run a Specific Benchmark
 
 ```bash
-invoke test-etl --etl duckdb_copy
+uv run invoke test-etl --etl duckdb_copy
 ```
 
 ## Build All Docker Images (without running)
 
 ```bash
-invoke build-all
+uv run invoke build-all
 ```
 
 ## List All Available Tasks
 
 ```bash
-invoke --list
+uv run invoke --list
 ```
 
 ## Available ETL Methods
@@ -191,7 +191,7 @@ CREATE TABLE os_open_uprn_full (
 
 ## AWS Seeding
 
-After `invoke terraform-apply`, seed the remote database:
+After `uv run invoke terraform-apply`, seed the remote database:
 
 ```bash
 DB_ENDPOINT=$(cd terraform && terraform output -raw cluster_endpoint)
