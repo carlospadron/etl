@@ -1,6 +1,6 @@
-# ETL
+# ETL — Batch Migration Benchmark
 
-Comparison of techs to perform ETL. The idea is simple, read a dataset from postgres, replicate it on another postres database and evaluate time and memory consupmtion. The detailed statistics can be found in [results.ipynb](results.ipynb).
+This project benchmarks **batch data migration** tools: each method reads a full static dataset from a source PostgreSQL database, writes it to a target PostgreSQL database in a single run, and is measured on duration and peak memory. It does **not** benchmark streaming, CDC, or incremental replication tools — those operate on a fundamentally different model (continuous operation, event-by-event latency, replication lag) that cannot be fairly compared with a one-shot bulk transfer.
 
 # Data
 
@@ -37,6 +37,19 @@ test count: 2,000,000
 - Very efficient compared to Pandas and for small datasets competes well against spark.
 - Very similar to pandas.
 
+# Not Included
+
+## PySpark Structured Streaming
+Spark Structured Streaming requires a continuous or incremental source (Kafka, S3 file drops, Delta Lake change feed, etc.) — a static PostgreSQL table is not a streaming source. Using `Trigger.Once()` / `Trigger.AvailableNow()` over JDBC would behave identically to the existing `pyspark_copy` / `pyspark_write` batch jobs with added overhead and no meaningful differentiation. PySpark streaming is better evaluated in a CDC pipeline (e.g. PostgreSQL logical replication → Debezium → Kafka → Spark), which is a separate architecture from what this benchmark tests.
+
+## Airbyte
+Airbyte is designed to run as an independent long-lived server with a UI and orchestration layer. `pyairbyte` is a thin SDK wrapper, not a lightweight replacement for the server, and cannot replicate the same execution model. Adding Airbyte would require running a full Airbyte Platform deployment alongside the benchmark databases, which is out of scope for a single-container ETL comparison.
+
+## Debezium
+Debezium is a CDC (Change Data Capture) platform that tails PostgreSQL's write-ahead log (WAL) via logical replication and publishes every change as an event to Kafka. It is a continuous streaming infrastructure component, not a batch transfer tool. While it performs an initial snapshot of an existing table, it has no concept of "done" — it runs indefinitely waiting for further changes. Benchmarking it here would measure platform startup and scheduling overhead, not data transfer throughput. Debezium belongs in a separate CDC benchmark measuring replication lag and event throughput against a source generating continuous changes.
+
+## PostgreSQL Logical Replication
+PostgreSQL logical replication streams WAL changes continuously from a publisher to one or more subscribers. Like Debezium (which uses it internally), it is a perpetual streaming mechanism designed for keeping replicas in sync — not for one-shot bulk migrations. It requires `wal_level=logical` on the source, a replication slot, and a publication/subscription pair, and has no natural completion point for a fixed dataset. It is out of scope for a batch migration benchmark.
 
 # Setup
 
@@ -164,6 +177,7 @@ uv run invoke --list
 | `spark` | Scala Spark JDBC read + JDBC write |
 | `meltano` | Meltano EL with tap-postgres + target-postgres |
 | `dlt` | dlt sql_database source + postgres destination |
+| `psycopg2_copy` | Pure psycopg2 binary COPY source → COPY target (no ORM) |
 
 ## Benchmark Report
 
