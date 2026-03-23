@@ -65,11 +65,17 @@ DATASETS = ["2m", "full"]
 DATASET_LABELS = {"2m": "2 M rows", "full": "Full dataset (~41 M rows)"}
 
 
-def _axes_for_datasets(df: pd.DataFrame, figsize_per: tuple[float, float]):
-    """Return (fig, axes_dict) where axes_dict maps dataset → ax."""
+def _axes_for_datasets(df: pd.DataFrame, width_per_col: float = 6,
+                       height_per_row: float = 0.45):
+    """Return (fig, axes_dict) where axes_dict maps dataset → ax.
+
+    Height is scaled by the number of methods so bars are always visible.
+    """
     present = [d for d in DATASETS if d in df["dataset"].values]
     n = len(present)
-    fig, axes = plt.subplots(1, n, figsize=(figsize_per[0] * n, figsize_per[1]),
+    n_methods = df["method"].nunique()
+    fig_height = max(3.0, height_per_row * n_methods)
+    fig, axes = plt.subplots(1, n, figsize=(width_per_col * n, fig_height),
                              squeeze=False)
     return fig, {d: axes[0, i] for i, d in enumerate(present)}
 
@@ -91,7 +97,7 @@ def _hbar(ax, series: pd.Series, label: str, unit: str, color: str,
 # ---------------------------------------------------------------------------
 
 def plot_speed(df: pd.DataFrame) -> None:
-    fig, axes = _axes_for_datasets(df, (6, 0.45))
+    fig, axes = _axes_for_datasets(df)
     for dataset, ax in axes.items():
         sub = df[df["dataset"] == dataset].set_index("method")
         _hbar(ax, sub["duration_s"], "Duration", "s", PALETTE)
@@ -104,7 +110,7 @@ def plot_speed(df: pd.DataFrame) -> None:
 
 
 def plot_image_size(df: pd.DataFrame) -> None:
-    fig, axes = _axes_for_datasets(df, (6, 0.45))
+    fig, axes = _axes_for_datasets(df)
     for dataset, ax in axes.items():
         sub = df[df["dataset"] == dataset].set_index("method")
         _hbar(ax, sub["image_size_mib"], "Image size", "MiB", PALETTE_2)
@@ -118,7 +124,7 @@ def plot_image_size(df: pd.DataFrame) -> None:
 
 
 def plot_peak_mem(df: pd.DataFrame) -> None:
-    fig, axes = _axes_for_datasets(df, (6, 0.45))
+    fig, axes = _axes_for_datasets(df)
     for dataset, ax in axes.items():
         sub = df[df["dataset"] == dataset].set_index("method")
         _hbar(ax, sub["peak_mem_mib"], "Peak memory", "MiB", "#55a868")
@@ -136,11 +142,8 @@ def plot_rank(df: pd.DataFrame) -> None:
     Composite rank = rank_by_duration + rank_by_peak_mem.
     Both ranks are 1-based ascending (1 = best). Lower total = better overall.
     """
-    present = [d for d in DATASETS if d in df["dataset"].values]
-    n = len(present)
-    fig, axes = plt.subplots(1, n, figsize=(6 * n, 0.45 * 15), squeeze=False)
-    for i, dataset in enumerate(present):
-        ax = axes[0, i]
+    fig, axes = _axes_for_datasets(df)
+    for dataset, ax in axes.items():
         sub = df[df["dataset"] == dataset].copy()
         sub["rank_speed"] = sub["duration_s"].rank(method="min")
         sub["rank_mem"] = sub["peak_mem_mib"].rank(method="min")
