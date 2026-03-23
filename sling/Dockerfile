@@ -12,17 +12,17 @@ RUN apt-get update && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install pipenv
-RUN pip install --no-cache-dir pipenv
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the Pipfile and Pipfile.lock into the container
-COPY Pipfile Pipfile.lock ./
+# Copy the pyproject.toml and lockfile into the container
+COPY pyproject.toml uv.lock ./
 
-# Install Python dependencies using pipenv
-RUN pipenv install --deploy --ignore-pipfile
+# Install Python dependencies using uv
+RUN uv sync --frozen --no-dev
 
 # Copy the bash script into the container
 COPY sling.sh /usr/local/bin/sling.sh
@@ -31,4 +31,4 @@ COPY sling.sh /usr/local/bin/sling.sh
 RUN chmod +x /usr/local/bin/sling.sh
 
 # Set the entrypoint to execute the bash script
-ENTRYPOINT ["pipenv", "run", "sh", "/usr/local/bin/sling.sh"]
+ENTRYPOINT ["uv", "run", "sh", "/usr/local/bin/sling.sh"]

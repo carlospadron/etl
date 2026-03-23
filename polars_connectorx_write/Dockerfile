@@ -12,20 +12,20 @@ RUN apt-get update && \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install pipenv
-RUN pip install --no-cache-dir pipenv
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the Pipfile and Pipfile.lock into the container
-COPY Pipfile Pipfile.lock ./
+# Copy the pyproject.toml and lockfile into the container
+COPY pyproject.toml uv.lock ./
 
-# Install Python dependencies using pipenv
-RUN pipenv install --deploy --ignore-pipfile
+# Install Python dependencies using uv
+RUN uv sync --frozen --no-dev
 
 # Copy the rest of the application code into the container
 COPY . .
 
 # Set the entrypoint to run the main.py script
-ENTRYPOINT ["pipenv", "run", "python", "main.py"]
+ENTRYPOINT ["uv", "run", "python", "main.py"]
