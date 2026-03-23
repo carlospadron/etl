@@ -25,7 +25,7 @@ engine_target = f'postgresql://{TARGET_USER}:{TARGET_PASS}@{TARGET_ADDRESS}/{TAR
 
 engine_origin = f'postgresql://{ORIGIN_USER}:{ORIGIN_PASS}@{ORIGIN_ADDRESS}/{ORIGIN_DB}'
 
-table_origin = 'public.os_open_uprn'
+table_origin = f"public.{os.getenv('SOURCE_TABLE', 'os_open_uprn')}"
 table_target = 'os_open_uprn'
 query = f"SELECT row_number() over () as fid, * FROM {table_origin}"
 

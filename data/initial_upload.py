@@ -49,13 +49,11 @@ def main() -> None:
             cur.execute(table_sql)
             print("Table definitions applied.")
             with open(csv_file, newline="", encoding="utf-8") as f:
-                cur.copy_expert("COPY os_open_uprn_full FROM STDIN WITH CSV HEADER", f)
-            print("CSV loaded into os_open_uprn_full.")
-            cur.execute("DROP TABLE IF EXISTS os_open_uprn")
-            cur.execute("SELECT * INTO os_open_uprn FROM os_open_uprn_full")
-            # To load only 2 million rows for testing, replace the line above with:
-            # cur.execute("SELECT * INTO os_open_uprn FROM os_open_uprn_full LIMIT 2000000")
-            print("os_open_uprn created.")
+                cur.copy_expert("COPY os_open_uprn FROM STDIN WITH CSV HEADER", f)
+            print("CSV loaded into os_open_uprn.")
+            cur.execute("DROP TABLE IF EXISTS os_open_uprn_2m")
+            cur.execute("SELECT * INTO os_open_uprn_2m FROM os_open_uprn LIMIT 2000000")
+            print("os_open_uprn_2m created (2,000,000 rows).")
     finally:
         conn.close()
 

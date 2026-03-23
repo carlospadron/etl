@@ -149,7 +149,7 @@ def seed_data() -> None:
             user=SOURCE_USER, password=SOURCE_PASS, dbname=SOURCE_DB,
         )
         with conn.cursor() as cur:
-            cur.execute("SELECT COUNT(*) FROM os_open_uprn_full")
+            cur.execute("SELECT COUNT(*) FROM os_open_uprn")
             existing = cur.fetchone()[0]
         conn.close()
         if existing > 0:
@@ -170,14 +170,16 @@ def seed_data() -> None:
     try:
         with conn.cursor() as cur:
             with open(csv_file, newline="", encoding="utf-8") as f:
-                cur.copy_expert("COPY os_open_uprn_full FROM STDIN WITH CSV HEADER", f)
-            cur.execute("DROP TABLE IF EXISTS os_open_uprn")
-            cur.execute("SELECT * INTO os_open_uprn FROM os_open_uprn_full")
+                cur.copy_expert("COPY os_open_uprn FROM STDIN WITH CSV HEADER", f)
             cur.execute("SELECT COUNT(*) FROM os_open_uprn")
-            row_count = cur.fetchone()[0]
+            full_count = cur.fetchone()[0]
+            info(f"Loaded {full_count:,} rows into os_open_uprn")
+            cur.execute("DROP TABLE IF EXISTS os_open_uprn_2m")
+            cur.execute("SELECT * INTO os_open_uprn_2m FROM os_open_uprn LIMIT 2000000")
+            info("Created os_open_uprn_2m (2,000,000 rows)")
     finally:
         conn.close()
-    info(f"Successfully seeded {row_count} rows into source database")
+    info("Data seeding complete")
 
 
 def generate_env_file() -> None:
@@ -233,8 +235,8 @@ TARGET_USER={TARGET_USER}
 TARGET_PASS={TARGET_PASS}
 
 # Sling connection strings
-SOURCEDB=postgresql://{SOURCE_USER}:{SOURCE_PASS}@etl-postgres-source:5432/{SOURCE_DB}
-TARGETDB=postgresql://{TARGET_USER}:{TARGET_PASS}@etl-postgres-target:5432/{TARGET_DB}
+SOURCEDB=postgresql://{SOURCE_USER}:{SOURCE_PASS}@etl-postgres-source:5432/{SOURCE_DB}?sslmode=disable
+TARGETDB=postgresql://{TARGET_USER}:{TARGET_PASS}@etl-postgres-target:5432/{TARGET_DB}?sslmode=disable
 """
     )
     info("Generated .env.docker")

@@ -131,22 +131,27 @@ def terraform_output(c):
 # ---------------------------------------------------------------------------
 
 
-@task
-def test_all(c):
+@task(
+    help={"dataset": "Dataset size: '2m' for 2 million rows or 'full' for complete dataset (default: full)"},
+)
+def test_all(c, dataset="full"):
     """Run all ETL benchmarks (build, run, monitor, validate, report)."""
-    c.run(f"uv run python {SCRIPT_DIR / 'run_tests.py'}")
+    c.run(f"uv run python {SCRIPT_DIR / 'run_tests.py'} --dataset {dataset}")
 
 
 @task(
-    help={"etl": f"ETL method to run. One of: {', '.join(ALL_METHODS)}"},
+    help={
+        "etl": f"ETL method to run. One of: {', '.join(ALL_METHODS)}",
+        "dataset": "Dataset size: '2m' for 2 million rows or 'full' for complete dataset (default: full)",
+    },
 )
-def test_etl(c, etl):
+def test_etl(c, etl, dataset="full"):
     """Run a single ETL benchmark. Use --etl to specify the method."""
     if etl not in ALL_METHODS:
         print(f"Unknown method: {etl}")
         print(f"Available: {', '.join(ALL_METHODS)}")
         sys.exit(1)
-    c.run(f"uv run python {SCRIPT_DIR / 'run_tests.py'} {etl}")
+    c.run(f"uv run python {SCRIPT_DIR / 'run_tests.py'} {etl} --dataset {dataset}")
 
 
 # ---------------------------------------------------------------------------
