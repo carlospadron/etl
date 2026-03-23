@@ -47,6 +47,7 @@ ALL_METHODS = [
     "sling",
     "spark",
     "meltano",
+    "dlt",
 ]
 
 

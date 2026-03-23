@@ -163,6 +163,7 @@ uv run invoke --list
 | `sling` | Sling full-refresh replication |
 | `spark` | Scala Spark JDBC read + JDBC write |
 | `meltano` | Meltano EL with tap-postgres + target-postgres |
+| `dlt` | dlt sql_database source + postgres destination |
 
 ## Benchmark Report
 
