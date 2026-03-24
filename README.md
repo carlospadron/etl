@@ -329,6 +329,19 @@ CREATE TABLE os_open_uprn (
 
 `os_open_uprn_2m` is pre-built at setup time as a 2,000,000-row subset of `os_open_uprn`.
 
+### `wkb` column and geometry support
+
+The `wkb` column is a PostGIS `geometry(Point, 4326)` stored generated column — it is part of the schema to reflect realistic production tables, but it is **not included in migration validation**. Benchmark pass/fail is based solely on row count. This is intentional: each tool handles PostGIS geometry differently, and enforcing a uniform geometry migration would distort the solutions away from each tool's natural idiom.
+
+**What this means per tool:**
+
+- Tools that use binary `COPY` (psycopg2, pg_dump/restore) transfer geometry transparently with no code changes — it is just bytes.
+- Tools that go through a text/CSV intermediate (DuckDB, Pandas, Polars, PySpark) need to represent geometry as a string. The standard portable option is `ST_AsHEXEWKB(wkb)` on the source, which PostgreSQL's geometry input function accepts directly on the target.
+- Tools that write via JDBC or a generic INSERT (Spark, PySpark write, `pandas_to_sql`) have no geometry type adapter and cannot cast `text → geometry` implicitly. In practice these tools either require a post-load `UPDATE … SET wkb = ST_SetSRID(…)` or are used with a schema that excludes the geometry column.
+- High-level tools (Sling, Meltano, dlt) handle geometry at the connector level with varying degrees of support; behaviour depends on the specific tap/target version.
+
+If you need to benchmark geometry migration specifically, the simplest portable approach is to read `wkb` as `ST_AsText(wkb)` (`WKT` format) on the source and insert it back as `ST_GeomFromText(wkb_col, 4326)` on the target — any tool that can handle a `text` column can use this pattern.
+
 ## AWS Seeding
 
 After `uv run invoke terraform-apply`, seed the remote database:
