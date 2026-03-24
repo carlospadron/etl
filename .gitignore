@@ -18,3 +18,4 @@ terraform/*.tfstate.backup
 terraform/terraform.tfstate.d/
 
 
+rust_copy/target/

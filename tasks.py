@@ -34,6 +34,8 @@ ALL_METHODS = [
     "meltano",
     "dlt",
     "psycopg2_copy",
+    "rust_copy",
+    "go_copy",
 ]
 
 
