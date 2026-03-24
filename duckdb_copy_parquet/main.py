@@ -20,7 +20,7 @@ duckdb.sql("INSTALL postgres;")
 duckdb.sql("LOAD postgres;")
 
 schema_origin = 'public'
-table_origin = 'os_open_uprn'
+table_origin = os.getenv('SOURCE_TABLE', 'os_open_uprn')
 table_target = 'os_open_uprn'
 query = f"SELECT * FROM {table_origin}"
 

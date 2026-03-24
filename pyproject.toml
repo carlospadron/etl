@@ -5,6 +5,8 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "invoke>=2.2",
+    "psycopg2-binary>=2.9",
     "ipykernel>=7.2.0",
     "matplotlib>=3.10.8",
     "pandas>=3.0.1",

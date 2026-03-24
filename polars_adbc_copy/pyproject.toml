@@ -1,0 +1,10 @@
+[project]
+name = "polars-adbc-copy"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "polars",
+    "psycopg2-binary",
+    "adbc-driver-postgresql",
+    "pyarrow",
+]

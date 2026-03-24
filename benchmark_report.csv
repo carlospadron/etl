@@ -1,0 +1,36 @@
+method,dataset,duration_s,image_size,peak_mem_mib,source_count,target_count,status
+duckdb_copy,2m,9,191.2MiB,275.8,2000000,2000000,PASS
+duckdb_copy_parquet,2m,8,191.2MiB,317.3,2000000,2000000,PASS
+pandas_copy,2m,19,204.2MiB,766.1,2000000,2000000,PASS
+pandas_to_sql,2m,218,204.2MiB,7777.3,2000000,2000000,PASS
+pg_dump_restore,2m,8,92.5MiB,33.1,2000000,2000000,PASS
+polars_adbc_copy,2m,7,273.5MiB,519.7,2000000,2000000,PASS
+polars_connectorx_copy,2m,7,308.7MiB,510.9,2000000,2000000,PASS
+polars_connectorx_write,2m,64,338.5MiB,1891.3,2000000,2000000,PASS
+pyspark_copy,2m,19,1.9GiB,670.1,2000000,2000000,PASS
+pyspark_write,2m,22,1.9GiB,764.9,2000000,2000000,PASS
+sling,2m,31,170.3MiB,123.7,2000000,2000000,PASS
+spark,2m,27,875.7MiB,1582.1,2000000,2000000,PASS
+meltano,2m,274,230.3MiB,543.3,2000000,2000000,PASS
+dlt,2m,109,185.4MiB,213.1,2000000,2000000,PASS
+psycopg2_copy,2m,4,73.3MiB,62.6,2000000,2000000,PASS
+go_copy,2m,4,2.8MiB,391.4,2000000,2000000,PASS
+duckdb_copy,full,44,191.2MiB,3600.4,41466127,41466127,PASS
+duckdb_copy_parquet,full,41,191.2MiB,3888.1,41466127,41466127,PASS
+pandas_copy,full,603,204.2MiB,14643.2,41466127,0,FAIL (timeout 600s)
+pandas_to_sql,full,570,204.2MiB,14837.8,41466127,0,FAIL (exit code 137)
+pg_dump_restore,full,142,92.5MiB,51.3,41466127,41466127,PASS
+polars_adbc_copy,full,80,273.5MiB,11468.8,41466127,41466127,PASS
+polars_connectorx_copy,full,83,308.7MiB,11356.2,41466127,41466127,PASS
+polars_connectorx_write,full,184,338.5MiB,14755.8,41466127,0,FAIL (exit code 1)
+pyspark_copy,full,139,1.9GiB,797.6,41466127,41466127,PASS
+pyspark_write,full,218,1.9GiB,1331.2,41466127,41466127,PASS
+sling,full,210,170.3MiB,123.6,41466127,41466127,PASS
+spark,full,225,875.7MiB,1990.7,41466127,41466127,PASS
+meltano,full,602,230.3MiB,589.5,41466127,4542205,FAIL (timeout 600s)
+dlt,full,602,185.4MiB,176.4,41466127,0,FAIL (timeout 600s)
+psycopg2_copy,full,54,73.3MiB,2478.1,41466127,41466127,PASS
+rust_copy,full,29,31.1MiB,2231.3,41466127,0,FAIL (exit code 101)
+go_copy,full,70,2.8MiB,6172.7,41466127,41466127,PASS
+rust_copy,2m,2,31.1MiB,5.7,2000000,2000000,PASS
+rust_copy,full,29,31.1MiB,7.6,41466127,41466127,PASS

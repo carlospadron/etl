@@ -15,7 +15,7 @@ ORIGIN_DB = os.getenv('ORIGIN_DB')
 url_target = f"jdbc:postgresql://{TARGET_ADDRESS}/{TARGET_DB}"
 url_origin = f"jdbc:postgresql://{ORIGIN_ADDRESS}/{ORIGIN_DB}"
 
-table_origin = 'public.os_open_uprn'
+table_origin = f"public.{os.getenv('SOURCE_TABLE', 'os_open_uprn')}"
 table_target = 'os_open_uprn'
 query = f"SELECT * FROM {table_origin}"
 
