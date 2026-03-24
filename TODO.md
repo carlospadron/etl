@@ -1,3 +1,0 @@
-- add wkb column to source table
-- add rust
-- add go
