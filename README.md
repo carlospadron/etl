@@ -98,7 +98,9 @@ test count: 2,000,000
 
 - **Use `duckdb_copy`** — best overall balance of speed (4s), memory (33 MiB), and simplicity. Pure SQL, no ORM.
 - **Use `pg_dump_restore`** — absolute lowest memory (31 MiB), zero code, perfect fidelity. Best for ops workflows.
+- **Use `rust_copy`** — fastest method (2s, 5.7 MiB) and the most memory-efficient at both scales. Worth considering even over `psycopg2_copy` if you can accommodate a Rust build step.
 - **Use `psycopg2_copy`** — fastest pure-Python option (4s, 72 MiB), no ORM or extra dependencies.
+- **Use `rust_copy` or `go_copy`** for smallest possible image sizes (31 MiB Rust, 2.8 MiB Go) — `go_copy` matches psycopg2_copy speed but uses more RAM (391 MiB); `rust_copy` beats everything.
 - **Use `sling`** if you need checkpointing / incremental loads — simplest tool with built-in resume support.
 - **Use `dlt`** if you need checkpointing with automatic schema evolution managed in Python.
 - **Use `meltano`** if you need checkpointing and are already in the Singer ecosystem (250+ connectors).
@@ -110,16 +112,18 @@ At full scale, several methods fail or time out, and the rankings shift substant
 
 | Method | Duration | Peak RAM | Result |
 |--------|----------|----------|--------|
-| `duckdb_copy` | 46s | 3.9 GiB | ✓ PASS |
-| `duckdb_copy_parquet` | 44s | 3.2 GiB | ✓ PASS |
-| `psycopg2_copy` | 57s | 2.5 GiB | ✓ PASS |
-| `polars_adbc_copy` | 81s | 11.5 GiB | ✓ PASS |
-| `polars_connectorx_copy` | 85s | 10.1 GiB | ✓ PASS |
-| `pyspark_copy` | 137s | 0.8 GiB | ✓ PASS |
-| `pg_dump_restore` | 146s | 49 MiB | ✓ PASS |
-| `sling` | 198s | 98 MiB | ✓ PASS |
-| `spark` | 223s | 2.0 GiB | ✓ PASS |
-| `pyspark_write` | 217s | 1.5 GiB | ✓ PASS |
+| `rust_copy` | 29s | 7.6 MiB | ✓ PASS |
+| `duckdb_copy_parquet` | 41s | 3.9 GiB | ✓ PASS |
+| `duckdb_copy` | 44s | 3.6 GiB | ✓ PASS |
+| `psycopg2_copy` | 54s | 2.4 GiB | ✓ PASS |
+| `go_copy` | 70s | 6.0 GiB | ✓ PASS |
+| `polars_adbc_copy` | 80s | 11.2 GiB | ✓ PASS |
+| `polars_connectorx_copy` | 83s | 11.1 GiB | ✓ PASS |
+| `pyspark_copy` | 139s | 0.8 GiB | ✓ PASS |
+| `pg_dump_restore` | 142s | 51 MiB | ✓ PASS |
+| `pyspark_write` | 218s | 1.3 GiB | ✓ PASS |
+| `sling` | 210s | 124 MiB | ✓ PASS |
+| `spark` | 225s | 1.9 GiB | ✓ PASS |
 | `pandas_copy` | —  | 14.7 GiB | ✗ Timeout |
 | `polars_connectorx_write` | — | 14.8 GiB | ✗ Count mismatch |
 | `pandas_to_sql` | — | 14.8 GiB | ✗ OOM crash |
@@ -136,6 +140,7 @@ At full scale, several methods fail or time out, and the rankings shift substant
 - **Polars ADBC/ConnectorX** work but require 10–11 GiB RAM — a hard constraint many machines won't meet.
 - **Avoid Pandas entirely for large data** — both variants either crash or time out.
 - **`dlt` and `meltano` time out** with the default 600s limit; they would likely pass with a higher timeout but are not suitable for large one-shot batch loads without tuning.
+- **`rust_copy`** is the fastest method at full scale (29s) and uses only **7.6 MiB** for 41M rows — lower than `pg_dump_restore` (51 MiB) and `sling` (124 MiB). This is the streaming `feed()` approach: each wire chunk is forwarded immediately to the target sink with no intermediate buffer. It is both the fastest and the most memory-efficient method in the entire benchmark at full scale.
 
 # Not Included
 
@@ -150,6 +155,11 @@ Debezium is a CDC (Change Data Capture) platform that tails PostgreSQL's write-a
 
 ## PostgreSQL Logical Replication
 PostgreSQL logical replication streams WAL changes continuously from a publisher to one or more subscribers. Like Debezium (which uses it internally), it is a perpetual streaming mechanism designed for keeping replicas in sync — not for one-shot bulk migrations. It requires `wal_level=logical` on the source, a replication slot, and a publication/subscription pair, and has no natural completion point for a fixed dataset. It is out of scope for a batch migration benchmark.
+
+## psycopg2_copy_chunked (not yet implemented)
+A checkpointed variant of `psycopg2_copy` that pages through the source table using keyset pagination (e.g. `WHERE uprn > $last_key ORDER BY uprn LIMIT $chunk_size`), writes each chunk via binary COPY, and persists the last successfully written key to a checkpoint table after each chunk. On resume it reads the checkpoint and continues from where it left off rather than restarting from row 0.
+
+This would be roughly 80 lines of Python, achieve near-identical throughput to `psycopg2_copy` (4s range at 2M rows), and give full row-level resume — the only combination in this benchmark that no existing dedicated tool provides at the same performance level. None of the higher-level tools (dlt, Meltano, Sling) match raw binary COPY throughput; none of the binary COPY implementations (psycopg2, Rust, Go) have checkpointing. This gap is why teams often end up writing their own migration scripts for PostgreSQL-to-PostgreSQL work rather than reaching for a data integration platform.
 
 # Setup
 
@@ -288,6 +298,8 @@ Composite rank (2 M rows) = rank by duration + rank by peak memory. Lower is bet
 | 25 | `polars_connectorx_write` | Polars ConnectorX + write_database | ✗ | 4/5 |
 | 25 | `spark` | Scala Spark JDBC read + JDBC write | ✓ | 1/5 |
 | 29 | `pandas_to_sql` | Pandas read_sql + to_sql() | ✗ | 5/5 |
+| 1 | `rust_copy` | Rust tokio-postgres binary COPY source → target (streaming) | ✗ | 2/5 |
+| — | `go_copy` | Go pgx binary COPY source → target | ✗ | 2/5 |
 
 ## Benchmark Report
 
