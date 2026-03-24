@@ -169,7 +169,7 @@ uv sync
 uv run invoke setup-local
 
 # Or run the script directly
-python setup_local.py
+uv run python setup_local.py
 ```
 
 This will:
@@ -224,10 +224,13 @@ All benchmarks are managed centrally. Each subfolder contains an ETL implementat
 
 ```bash
 # Full dataset (default)
-uv run invoke test-all
+uv run invoke test-all 
 
 # 2 million row subset
 uv run invoke test-all --dataset 2m
+
+# Force rebuild of Docker images (e.g. after code changes)
+uv run invoke test-all --rebuild
 ```
 
 ## Run a Specific Benchmark
@@ -235,6 +238,9 @@ uv run invoke test-all --dataset 2m
 ```bash
 uv run invoke test-etl --etl duckdb_copy
 uv run invoke test-etl --etl duckdb_copy --dataset 2m
+
+# Force rebuild after code changes
+uv run invoke test-etl --etl duckdb_copy --rebuild
 ```
 
 ## Build All Docker Images (without running)
@@ -242,6 +248,8 @@ uv run invoke test-etl --etl duckdb_copy --dataset 2m
 ```bash
 uv run invoke build-all
 ```
+
+> **Note:** `test-etl` and `test-all` skip the build if an image already exists. Pass `--rebuild` to force a rebuild after code changes.
 
 ## Stop and Clean Local Databases
 
