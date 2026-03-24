@@ -1,4 +1,3 @@
-use bytes::{Bytes, BytesMut};
 use std::env;
 use tokio_postgres::{Client, NoTls};
 
@@ -57,39 +56,33 @@ async fn main() {
     let columns: Vec<String> = col_rows.iter().map(|r| r.get(0)).collect();
     let col_list = columns.join(", ");
 
-    println!("Copying {source_table} -> os_open_uprn via binary COPY...");
+    println!("Copying {source_table} -> os_open_uprn via binary COPY (streaming)...");
 
-    // Stream binary COPY from source into an in-memory buffer.
     let copy_out_sql = format!(
         "COPY (SELECT * FROM public.{source_table}) TO STDOUT (FORMAT BINARY)"
     );
+    let copy_in_sql = format!("COPY os_open_uprn ({col_list}) FROM STDIN (FORMAT BINARY)");
+
+    // Stream chunks directly from source COPY OUT to target COPY IN without
+    // buffering the full dataset in memory.
     let stream = src
         .copy_out(&copy_out_sql)
         .await
         .expect("COPY TO STDOUT failed");
-
-    // Collect all chunks into a buffer.
-    let mut buf = BytesMut::new();
-    {
-        use futures_util::TryStreamExt;
-        let mut stream = std::pin::pin!(stream);
-        while let Some(chunk) = stream.try_next().await.expect("stream error") {
-            buf.extend_from_slice(&chunk);
-        }
-    }
-    let data: Bytes = buf.freeze();
-
-    // Stream binary data into target.
-    let copy_in_sql = format!("COPY os_open_uprn ({col_list}) FROM STDIN (FORMAT BINARY)");
     let sink = tgt
         .copy_in(&copy_in_sql)
         .await
         .expect("COPY FROM STDIN failed");
 
     {
-        use futures_util::SinkExt;
+        use futures_util::{SinkExt, TryStreamExt};
+        let mut stream = std::pin::pin!(stream);
         let mut sink = std::pin::pin!(sink);
-        sink.send(data).await.expect("sink send failed");
+        while let Some(chunk) = stream.try_next().await.expect("stream error") {
+            // feed() buffers without flushing; send() would flush after every
+            // ~8 KB chunk causing a TCP round-trip per chunk and 20x slowdown.
+            sink.feed(chunk).await.expect("sink feed failed");
+        }
         sink.close().await.expect("sink close failed");
     }
 
